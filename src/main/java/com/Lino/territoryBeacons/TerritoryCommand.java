@@ -43,7 +43,7 @@ public class TerritoryCommand implements CommandExecutor, TabCompleter {
 
             case "trust":
                 if (args.length < 2) {
-                    player.sendMessage(ChatColor.RED + "Uso: /territory trust <player>");
+                    player.sendMessage(ChatColor.RED + "Usage: /territory trust <player>");
                     break;
                 }
                 trustPlayer(player, args[1]);
@@ -51,7 +51,7 @@ public class TerritoryCommand implements CommandExecutor, TabCompleter {
 
             case "untrust":
                 if (args.length < 2) {
-                    player.sendMessage(ChatColor.RED + "Uso: /territory untrust <player>");
+                    player.sendMessage(ChatColor.RED + "Usage: /territory untrust <player>");
                     break;
                 }
                 untrustPlayer(player, args[1]);
@@ -73,7 +73,7 @@ public class TerritoryCommand implements CommandExecutor, TabCompleter {
                 if (player.hasPermission("territory.admin")) {
                     reloadPlugin(player);
                 } else {
-                    player.sendMessage(ChatColor.RED + "Non hai il permesso per ricaricare il plugin!");
+                    player.sendMessage(ChatColor.RED + "You do not have permission to reload the plugin!");
                 }
                 break;
 
@@ -82,7 +82,7 @@ public class TerritoryCommand implements CommandExecutor, TabCompleter {
                 break;
 
             default:
-                player.sendMessage(ChatColor.RED + "Comando sconosciuto. Usa /territory help");
+                player.sendMessage(ChatColor.RED + "Unknown command. Use /territory help");
                 break;
         }
 
@@ -90,16 +90,16 @@ public class TerritoryCommand implements CommandExecutor, TabCompleter {
     }
 
     private void showHelp(Player player) {
-        player.sendMessage(ChatColor.GREEN + "=== TerritoryBeacons Comandi ===");
-        player.sendMessage(ChatColor.AQUA + "/territory info" + ChatColor.WHITE + " - Mostra info del territorio in cui ti trovi");
-        player.sendMessage(ChatColor.AQUA + "/territory trust <player>" + ChatColor.WHITE + " - Aggiungi un giocatore fidato");
-        player.sendMessage(ChatColor.AQUA + "/territory untrust <player>" + ChatColor.WHITE + " - Rimuovi un giocatore fidato");
-        player.sendMessage(ChatColor.AQUA + "/territory trusted" + ChatColor.WHITE + " - Lista giocatori fidati");
-        player.sendMessage(ChatColor.AQUA + "/territory list [player]" + ChatColor.WHITE + " - Lista territori");
+        player.sendMessage(ChatColor.GREEN + "=== TerritoryBeacons Commands ===");
+        player.sendMessage(ChatColor.AQUA + "/territory info" + ChatColor.WHITE + " - Show information about the territory you are in");
+        player.sendMessage(ChatColor.AQUA + "/territory trust <player>" + ChatColor.WHITE + " - Add a trusted player");
+        player.sendMessage(ChatColor.AQUA + "/territory untrust <player>" + ChatColor.WHITE + " - Remove a trusted player");
+        player.sendMessage(ChatColor.AQUA + "/territory trusted" + ChatColor.WHITE + " - List trusted players");
+        player.sendMessage(ChatColor.AQUA + "/territory list [player]" + ChatColor.WHITE + " - List territories");
         if (player.hasPermission("territory.admin")) {
-            player.sendMessage(ChatColor.AQUA + "/territory reload" + ChatColor.WHITE + " - Ricarica la configurazione");
+            player.sendMessage(ChatColor.AQUA + "/territory reload" + ChatColor.WHITE + " - Reload the configuration");
         }
-        player.sendMessage(ChatColor.AQUA + "/territory help" + ChatColor.WHITE + " - Mostra questo messaggio");
+        player.sendMessage(ChatColor.AQUA + "/territory help" + ChatColor.WHITE + " - Show this message");
     }
 
     private void showTerritoryInfo(Player player) {
@@ -115,21 +115,21 @@ public class TerritoryCommand implements CommandExecutor, TabCompleter {
         }
 
         if (territory == null) {
-            player.sendMessage(ChatColor.YELLOW + "Non sei in nessun territorio");
+            player.sendMessage(ChatColor.YELLOW + "You are not in any territory");
             return;
         }
 
-        player.sendMessage(ChatColor.GREEN + "=== Informazioni Territorio ===");
-        player.sendMessage(ChatColor.AQUA + "Proprietario: " + ChatColor.WHITE + territory.getOwnerName());
-        player.sendMessage(ChatColor.AQUA + "Raggio: " + ChatColor.WHITE + territory.getRadius() + " blocchi");
-        player.sendMessage(ChatColor.AQUA + "Livello: " + ChatColor.WHITE + territory.getTier());
-        player.sendMessage(ChatColor.AQUA + "Influenza: " + ChatColor.WHITE +
+        player.sendMessage(ChatColor.GREEN + "=== Territory Information ===");
+        player.sendMessage(ChatColor.AQUA + "Owner: " + ChatColor.WHITE + territory.getOwnerName());
+        player.sendMessage(ChatColor.AQUA + "Radius: " + ChatColor.WHITE + territory.getRadius() + " blocks");
+        player.sendMessage(ChatColor.AQUA + "Level: " + ChatColor.WHITE + territory.getTier());
+        player.sendMessage(ChatColor.AQUA + "Influence: " + ChatColor.WHITE +
                 String.format("%.1f%%", territory.getInfluence() * 100));
 
         if (territory.getOwnerUUID().equals(player.getUniqueId())) {
-            player.sendMessage(ChatColor.GOLD + "Questo è il tuo territorio!");
+            player.sendMessage(ChatColor.GOLD + "This is your territory!");
         } else if (territory.isTrusted(player.getUniqueId())) {
-            player.sendMessage(ChatColor.GREEN + "Sei un giocatore fidato in questo territorio");
+            player.sendMessage(ChatColor.GREEN + "You are a trusted player in this territory");
         }
     }
 
@@ -137,32 +137,32 @@ public class TerritoryCommand implements CommandExecutor, TabCompleter {
         Territory territory = plugin.getTerritoryByOwner(player.getUniqueId());
 
         if (territory == null) {
-            player.sendMessage(ChatColor.RED + "Non possiedi nessun territorio!");
+            player.sendMessage(ChatColor.RED + "You do not own any territory!");
             return;
         }
 
         Player target = Bukkit.getPlayer(targetName);
         if (target == null) {
-            player.sendMessage(ChatColor.RED + "Giocatore non trovato!");
+            player.sendMessage(ChatColor.RED + "Player not found!");
             return;
         }
 
         if (target.getUniqueId().equals(player.getUniqueId())) {
-            player.sendMessage(ChatColor.RED + "Non puoi aggiungere te stesso!");
+            player.sendMessage(ChatColor.RED + "You cannot add yourself!");
             return;
         }
 
         if (territory.isTrusted(target.getUniqueId())) {
-            player.sendMessage(ChatColor.YELLOW + target.getName() + " è già un giocatore fidato!");
+            player.sendMessage(ChatColor.YELLOW + target.getName() + " is already a trusted player!");
             return;
         }
 
         territory.addTrustedPlayer(target.getUniqueId());
-        player.sendMessage(ChatColor.GREEN + target.getName() + " è ora un giocatore fidato!");
+        player.sendMessage(ChatColor.GREEN + target.getName() + " is now a trusted player!");
 
         if (target.isOnline()) {
-            target.sendMessage(ChatColor.GREEN + "Sei ora un giocatore fidato nel territorio di " +
-                    player.getName() + "!");
+            target.sendMessage(ChatColor.GREEN + "You are now a trusted player in " +
+                    player.getName() + "'s territory!");
         }
     }
 
@@ -170,27 +170,27 @@ public class TerritoryCommand implements CommandExecutor, TabCompleter {
         Territory territory = plugin.getTerritoryByOwner(player.getUniqueId());
 
         if (territory == null) {
-            player.sendMessage(ChatColor.RED + "Non possiedi nessun territorio!");
+            player.sendMessage(ChatColor.RED + "You do not own any territory!");
             return;
         }
 
         Player target = Bukkit.getPlayer(targetName);
         if (target == null) {
-            player.sendMessage(ChatColor.RED + "Giocatore non trovato!");
+            player.sendMessage(ChatColor.RED + "Player not found!");
             return;
         }
 
         if (!territory.isTrusted(target.getUniqueId())) {
-            player.sendMessage(ChatColor.YELLOW + target.getName() + " non è un giocatore fidato!");
+            player.sendMessage(ChatColor.YELLOW + target.getName() + " is not a trusted player!");
             return;
         }
 
         territory.removeTrustedPlayer(target.getUniqueId());
-        player.sendMessage(ChatColor.GREEN + target.getName() + " non è più un giocatore fidato!");
+        player.sendMessage(ChatColor.GREEN + target.getName() + " is no longer a trusted player!");
 
         if (target.isOnline()) {
-            target.sendMessage(ChatColor.YELLOW + "Non sei più un giocatore fidato nel territorio di " +
-                    player.getName() + "!");
+            target.sendMessage(ChatColor.YELLOW + "You are no longer a trusted player in " +
+                    player.getName() + "'s territory!");
         }
     }
 
@@ -198,18 +198,18 @@ public class TerritoryCommand implements CommandExecutor, TabCompleter {
         Territory territory = plugin.getTerritoryByOwner(player.getUniqueId());
 
         if (territory == null) {
-            player.sendMessage(ChatColor.RED + "Non possiedi nessun territorio!");
+            player.sendMessage(ChatColor.RED + "You do not own any territory!");
             return;
         }
 
         Set<UUID> trusted = territory.getTrustedPlayers();
 
         if (trusted.isEmpty()) {
-            player.sendMessage(ChatColor.YELLOW + "Non hai giocatori fidati nel tuo territorio");
+            player.sendMessage(ChatColor.YELLOW + "You have no trusted players in your territory");
             return;
         }
 
-        player.sendMessage(ChatColor.GREEN + "=== Giocatori Fidati ===");
+        player.sendMessage(ChatColor.GREEN + "=== Trusted Players ===");
         for (UUID uuid : trusted) {
             Player trustedPlayer = Bukkit.getPlayer(uuid);
             String name = trustedPlayer != null ? trustedPlayer.getName() : Bukkit.getOfflinePlayer(uuid).getName();
@@ -223,18 +223,18 @@ public class TerritoryCommand implements CommandExecutor, TabCompleter {
         Map<Location, Territory> territories = plugin.getTerritories();
 
         if (territories.isEmpty()) {
-            player.sendMessage(ChatColor.YELLOW + "Non ci sono territori attivi");
+            player.sendMessage(ChatColor.YELLOW + "There are no active territories");
             return;
         }
 
-        player.sendMessage(ChatColor.GREEN + "=== Territori Attivi ===");
+        player.sendMessage(ChatColor.GREEN + "=== Active Territories ===");
         for (Territory territory : territories.values()) {
             Location loc = territory.getBeaconLocation();
             String coords = String.format("(%d, %d, %d)", loc.getBlockX(), loc.getBlockY(), loc.getBlockZ());
             String influence = String.format("%.0f%%", territory.getInfluence() * 100);
 
             player.sendMessage(ChatColor.AQUA + territory.getOwnerName() + ChatColor.WHITE +
-                    " - " + coords + " - Influenza: " + influence);
+                    " - " + coords + " - Influence: " + influence);
         }
     }
 
@@ -246,25 +246,25 @@ public class TerritoryCommand implements CommandExecutor, TabCompleter {
         Territory territory = plugin.getTerritoryByOwner(targetUUID);
 
         if (territory == null) {
-            player.sendMessage(ChatColor.YELLOW + targetName + " non possiede territori");
+            player.sendMessage(ChatColor.YELLOW + targetName + " does not own any territories");
             return;
         }
 
         Location loc = territory.getBeaconLocation();
         String coords = String.format("(%d, %d, %d)", loc.getBlockX(), loc.getBlockY(), loc.getBlockZ());
 
-        player.sendMessage(ChatColor.GREEN + "=== Territorio di " + targetName + " ===");
-        player.sendMessage(ChatColor.AQUA + "Posizione: " + ChatColor.WHITE + coords);
-        player.sendMessage(ChatColor.AQUA + "Raggio: " + ChatColor.WHITE + territory.getRadius() + " blocchi");
-        player.sendMessage(ChatColor.AQUA + "Livello: " + ChatColor.WHITE + territory.getTier());
-        player.sendMessage(ChatColor.AQUA + "Influenza: " + ChatColor.WHITE +
+        player.sendMessage(ChatColor.GREEN + "=== " + targetName + "'s Territory ===");
+        player.sendMessage(ChatColor.AQUA + "Location: " + ChatColor.WHITE + coords);
+        player.sendMessage(ChatColor.AQUA + "Radius: " + ChatColor.WHITE + territory.getRadius() + " blocks");
+        player.sendMessage(ChatColor.AQUA + "Level: " + ChatColor.WHITE + territory.getTier());
+        player.sendMessage(ChatColor.AQUA + "Influence: " + ChatColor.WHITE +
                 String.format("%.1f%%", territory.getInfluence() * 100));
     }
 
     private void reloadPlugin(Player player) {
         plugin.reloadConfig();
         plugin.loadConfigValues();
-        player.sendMessage(ChatColor.GREEN + "Configurazione ricaricata con successo!");
+        player.sendMessage(ChatColor.GREEN + "Configuration reloaded successfully!");
     }
 
     @Override

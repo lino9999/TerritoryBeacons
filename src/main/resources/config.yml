@@ -1,50 +1,50 @@
 # TerritoryBeacons Configuration
-# Plugin creato per gestire territori usando beacon potenziati
+# Plugin created to manage territories using powered beacons
 
-# Raggio base per beacon livello 1 (in blocchi)
+# Base radius for level 1 beacon (in blocks)
 base-radius: 16
 
-# Raggio aggiuntivo per ogni livello di beacon
+# Additional radius for each beacon tier
 radius-per-tier: 8
 
-# Tempo di inattività prima che il territorio inizi a decadere (in ore)
+# Inactivity time before the territory starts to decay (in hours)
 decay-time-hours: 72
 
-# Messaggio quando un territorio viene creato
-territory-created-message: "&aTerritorio creato con successo! Raggio: %radius% blocchi"
+# Message when a territory is created
+territory-created-message: "&aTerritory created successfully! Radius: %radius% blocks"
 
-# Messaggio quando un territorio decade
-territory-decay-message: "&cIl territorio di %owner% è decaduto per inattività!"
+# Message when a territory decays
+territory-decay-message: "&cThe territory of %owner% has decayed due to inactivity!"
 
-# Configurazione avanzata
+# Advanced configuration
 advanced:
-  # Distanza minima tra beacon (oltre al raggio dei territori)
+  # Minimum distance between beacons (beyond territories' radii)
   minimum-beacon-distance: 8
 
-  # Permette overlap di territori dello stesso proprietario
+  # Allow overlap of territories belonging to the same owner
   allow-same-owner-overlap: false
 
-  # Numero massimo di territori per giocatore
+  # Maximum number of territories per player
   max-territories-per-player: 1
 
-  # Protegge anche i cofani nei territori
+  # Also protect containers within territories
   protect-containers: true
 
-  # Previene esplosioni nei territori (TNT, Creeper, etc.)
+  # Prevent explosions within territories (TNT, Creeper, etc.)
   prevent-explosions: true
 
-  # Permette mob spawning nei territori
+  # Allow mob spawning within territories
   allow-mob-spawning: true
 
-  # Previene fire spread nei territori
+  # Prevent fire spread within territories
   prevent-fire-spread: true
 
-# Database (per future espansioni)
+# Database (for future expansions)
 database:
-  # Tipo di storage (FILE o MYSQL)
+  # Storage type (FILE or MYSQL)
   type: FILE
 
-  # Configurazione MySQL (se abilitato)
+  # MySQL configuration (if enabled)
   mysql:
     host: localhost
     port: 3306

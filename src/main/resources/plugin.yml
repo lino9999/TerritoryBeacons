@@ -3,34 +3,34 @@ version: '1.0'
 main: com.Lino.territoryBeacons.TerritoryBeacons
 api-version: 1.13
 author: Lino
-description: Un sistema di claiming territoriale basato su beacon potenziati
+description: A territorial claiming system based on powered beacons
 
 commands:
   territory:
-    description: Comando principale per gestire i territori
+    description: Main command to manage territories
     usage: /territory <subcommand>
     aliases: [terr, t]
     permission: territory.use
 
 permissions:
   territory.use:
-    description: Permesso base per usare i comandi territorio
+    description: Basic permission to use territory commands
     default: true
 
   territory.admin:
-    description: Permesso admin per bypassare protezioni
+    description: Admin permission to bypass protections
     default: op
 
   territory.create:
-    description: Permette di creare territori
+    description: Allows creating territories
     default: true
 
   territory.trust:
-    description: Permette di aggiungere giocatori fidati
+    description: Allows adding trusted players
     default: true
 
   territory.*:
-    description: Tutti i permessi territorio
+    description: All territory permissions
     default: op
     children:
       territory.use: true

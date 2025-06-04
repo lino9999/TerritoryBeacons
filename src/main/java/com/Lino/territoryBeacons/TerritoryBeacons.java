@@ -84,14 +84,14 @@ public class TerritoryBeacons extends JavaPlugin implements Listener {
         // Check if location overlaps with existing territory
         for (Territory territory : territories.values()) {
             if (territory.overlaps(loc)) {
-                player.sendMessage(ChatColor.RED + "Questa posizione è troppo vicina a un altro territorio!");
+                player.sendMessage(ChatColor.RED + "This location is too close to another territory!");
                 event.setCancelled(true);
                 return;
             }
         }
 
         // Schedule beacon check after placement with longer delay
-        player.sendMessage(ChatColor.YELLOW + "Beacon piazzato! Attiva il beacon con un effetto per creare il territorio.");
+        player.sendMessage(ChatColor.YELLOW + "Beacon placed! Activate the beacon with an effect to create the territory.");
 
         // Start checking for activation
         new BukkitRunnable() {
@@ -140,7 +140,7 @@ public class TerritoryBeacons extends JavaPlugin implements Listener {
             if (!territory.getOwnerUUID().equals(breaker.getUniqueId()) &&
                     !breaker.hasPermission("territory.admin")) {
 
-                breaker.sendMessage(ChatColor.RED + "Non puoi distruggere questo beacon! Solo il proprietario può farlo.");
+                breaker.sendMessage(ChatColor.RED + "You cannot destroy this beacon! Only the owner can do it.");
                 event.setCancelled(true);
                 return;
             }
@@ -150,8 +150,8 @@ public class TerritoryBeacons extends JavaPlugin implements Listener {
 
             // Remove territory
             territories.remove(loc);
-            Bukkit.broadcastMessage(ChatColor.YELLOW + "Il territorio di " +
-                    territory.getOwnerName() + " è stato distrutto!");
+            Bukkit.broadcastMessage(ChatColor.YELLOW + "The territory of " +
+                    territory.getOwnerName() + " has been destroyed!");
         }
     }
 
@@ -167,7 +167,7 @@ public class TerritoryBeacons extends JavaPlugin implements Listener {
             for (Territory territory : territories.values()) {
                 if (territory.getBorderBlocks().contains(blockLoc)) {
                     event.setCancelled(true);
-                    player.sendMessage(ChatColor.RED + "Non puoi rompere i confini del territorio!");
+                    player.sendMessage(ChatColor.RED + "You cannot break the territory boundaries!");
                     return;
                 }
             }
@@ -181,7 +181,7 @@ public class TerritoryBeacons extends JavaPlugin implements Listener {
 
         Territory territory = getTerritoryAt(blockLoc);
         if (territory != null && !territory.canBuild(player)) {
-            player.sendMessage(ChatColor.RED + "Non puoi distruggere nel territorio di " +
+            player.sendMessage(ChatColor.RED + "You cannot destroy in the territory of " +
                     territory.getOwnerName() + "!");
             event.setCancelled(true);
         }
@@ -199,7 +199,7 @@ public class TerritoryBeacons extends JavaPlugin implements Listener {
 
         Territory territory = getTerritoryAt(block.getLocation());
         if (territory != null && !territory.canBuild(player)) {
-            player.sendMessage(ChatColor.RED + "Non puoi costruire nel territorio di " +
+            player.sendMessage(ChatColor.RED + "You cannot build in the territory of " +
                     territory.getOwnerName() + "!");
             event.setCancelled(true);
         }
@@ -232,7 +232,7 @@ public class TerritoryBeacons extends JavaPlugin implements Listener {
 
         Territory territory = getTerritoryAt(event.getBlock().getLocation());
         if (territory != null && !territory.canBuild(event.getPlayer())) {
-            event.getPlayer().sendMessage(ChatColor.RED + "Non puoi piazzare TNT in questo territorio!");
+            event.getPlayer().sendMessage(ChatColor.RED + "You cannot place TNT in this territory!");
             event.setCancelled(true);
         }
     }
@@ -263,11 +263,11 @@ public class TerritoryBeacons extends JavaPlugin implements Listener {
 
         if (territory != null) {
             Player player = event.getPlayer();
-            player.sendMessage(ChatColor.GREEN + "=== Informazioni Territorio ===");
-            player.sendMessage(ChatColor.AQUA + "Proprietario: " + ChatColor.WHITE + territory.getOwnerName());
-            player.sendMessage(ChatColor.AQUA + "Raggio: " + ChatColor.WHITE + territory.getRadius() + " blocchi");
-            player.sendMessage(ChatColor.AQUA + "Livello: " + ChatColor.WHITE + territory.getTier());
-            player.sendMessage(ChatColor.AQUA + "Influenza: " + ChatColor.WHITE +
+            player.sendMessage(ChatColor.GREEN + "=== Territory Information ===");
+            player.sendMessage(ChatColor.AQUA + "Owner: " + ChatColor.WHITE + territory.getOwnerName());
+            player.sendMessage(ChatColor.AQUA + "Radius: " + ChatColor.WHITE + territory.getRadius() + " blocks");
+            player.sendMessage(ChatColor.AQUA + "Level: " + ChatColor.WHITE + territory.getTier());
+            player.sendMessage(ChatColor.AQUA + "Influence: " + ChatColor.WHITE +
                     String.format("%.1f%%", territory.getInfluence() * 100));
         } else {
             // Not a territory yet, check if it can become one after this interaction
@@ -281,7 +281,7 @@ public class TerritoryBeacons extends JavaPlugin implements Listener {
 
                     if (beacon.getTier() > 0 && beacon.getPrimaryEffect() != null && !territories.containsKey(loc)) {
                         // Ask player if they want to create territory
-                        player.sendMessage(ChatColor.GREEN + "Beacon attivato! Creazione territorio...");
+                        player.sendMessage(ChatColor.GREEN + "Beacon activated! Creating territory...");
                         checkAndCreateTerritory(loc, player);
                     }
                 }
@@ -297,19 +297,19 @@ public class TerritoryBeacons extends JavaPlugin implements Listener {
         int tier = beacon.getTier();
 
         if (tier == 0) {
-            owner.sendMessage(ChatColor.RED + "Il beacon deve essere attivato con una piramide!");
+            owner.sendMessage(ChatColor.RED + "The beacon must be activated with a pyramid!");
             return;
         }
 
         // Check if beacon has an active effect
         if (beacon.getPrimaryEffect() == null) {
-            owner.sendMessage(ChatColor.RED + "Il beacon deve avere un effetto attivo! Inserisci un lingotto e seleziona un potere.");
+            owner.sendMessage(ChatColor.RED + "The beacon must have an active effect! Insert an ingot and select a power.");
             return;
         }
 
         // Check if already a territory
         if (territories.containsKey(loc)) {
-            owner.sendMessage(ChatColor.YELLOW + "Questo beacon è già un territorio!");
+            owner.sendMessage(ChatColor.YELLOW + "This beacon is already a territory!");
             return;
         }
 
@@ -321,14 +321,14 @@ public class TerritoryBeacons extends JavaPlugin implements Listener {
                 loc, totalRadius, tier);
         territories.put(loc, territory);
 
-        owner.sendMessage(ChatColor.GREEN + "Territorio creato con successo!");
-        owner.sendMessage(ChatColor.AQUA + "Raggio: " + totalRadius + " blocchi");
-        owner.sendMessage(ChatColor.AQUA + "Livello beacon: " + tier);
+        owner.sendMessage(ChatColor.GREEN + "Territory created successfully!");
+        owner.sendMessage(ChatColor.AQUA + "Radius: " + totalRadius + " blocks");
+        owner.sendMessage(ChatColor.AQUA + "Beacon level: " + tier);
 
         // Broadcast to nearby players
         for (Player p : loc.getWorld().getPlayers()) {
             if (p != owner && p.getLocation().distance(loc) < 100) {
-                p.sendMessage(ChatColor.YELLOW + owner.getName() + " ha creato un nuovo territorio!");
+                p.sendMessage(ChatColor.YELLOW + owner.getName() + " has created a new territory!");
             }
         }
 
@@ -466,8 +466,8 @@ public class TerritoryBeacons extends JavaPlugin implements Listener {
                                 }
 
                                 Bukkit.broadcastMessage(ChatColor.RED +
-                                        "Il territorio di " + territory.getOwnerName() +
-                                        " è decaduto per inattività!");
+                                        "The territory of " + territory.getOwnerName() +
+                                        " has decayed due to inactivity!");
                             }
                         }
                     } else {
@@ -513,15 +513,15 @@ public class TerritoryBeacons extends JavaPlugin implements Listener {
             playerCurrentTerritory.put(playerUUID, currentTerritory);
 
             // Show title
-            String title = ChatColor.AQUA + "Territorio di";
+            String title = ChatColor.AQUA + "Territory of";
             String subtitle = ChatColor.GOLD + currentTerritory.getOwnerName();
 
             // Different color if it's their own territory
             if (currentTerritory.getOwnerUUID().equals(playerUUID)) {
-                title = ChatColor.GREEN + "Il tuo territorio";
-                subtitle = ChatColor.GRAY + "Sei al sicuro qui";
+                title = ChatColor.GREEN + "Your territory";
+                subtitle = ChatColor.GRAY + "You are safe here";
             } else if (currentTerritory.isTrusted(playerUUID)) {
-                subtitle = ChatColor.GREEN + currentTerritory.getOwnerName() + ChatColor.GRAY + " (Fidato)";
+                subtitle = ChatColor.GREEN + currentTerritory.getOwnerName() + ChatColor.GRAY + " (Trusted)";
             }
 
             player.sendTitle(title, subtitle, 10, 40, 10);
@@ -535,8 +535,8 @@ public class TerritoryBeacons extends JavaPlugin implements Listener {
             playerCurrentTerritory.remove(playerUUID);
 
             // Show exit title
-            player.sendTitle(ChatColor.GRAY + "Territorio Libero",
-                    ChatColor.DARK_GRAY + "Hai lasciato il territorio protetto", 10, 30, 10);
+            player.sendTitle(ChatColor.GRAY + "Free Territory",
+                    ChatColor.DARK_GRAY + "You have left the protected territory", 10, 30, 10);
 
             // Play sound
             player.playSound(player.getLocation(),
