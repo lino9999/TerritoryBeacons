@@ -8,7 +8,7 @@ base-radius: 16
 radius-per-tier: 8
 
 # Inactivity time before the territory starts to decay (in hours)
-decay-time-hours: 72
+decay-time-hours: 160
 
 # Message when a territory is created
 territory-created-message: "&aTerritory created successfully! Radius: %radius% blocks"
@@ -18,8 +18,8 @@ territory-decay-message: "&cThe territory of %owner% has decayed due to inactivi
 
 # Advanced configuration
 advanced:
-  # Minimum distance between beacons (beyond territories' radii)
-  minimum-beacon-distance: 8
+  # Minimum distance between beacons (32 recommended)
+  minimum-beacon-distance: 32
 
   # Allow overlap of territories belonging to the same owner
   allow-same-owner-overlap: false

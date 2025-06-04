@@ -1,0 +1,8 @@
+<component name="ArtifactManager">
+  <artifact type="jar" build-on-make="true" name="territorybeacons:jar">
+    <output-path>$PROJECT_DIR$/../Plugin MC compilati</output-path>
+    <root id="archive" name="territorybeacons.jar">
+      <element id="module-output" name="territorybeacons" />
+    </root>
+  </artifact>
+</component>
