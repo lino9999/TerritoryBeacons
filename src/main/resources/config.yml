@@ -1,0 +1,53 @@
+# TerritoryBeacons Configuration
+# Plugin creato per gestire territori usando beacon potenziati
+
+# Raggio base per beacon livello 1 (in blocchi)
+base-radius: 16
+
+# Raggio aggiuntivo per ogni livello di beacon
+radius-per-tier: 8
+
+# Tempo di inattività prima che il territorio inizi a decadere (in ore)
+decay-time-hours: 72
+
+# Messaggio quando un territorio viene creato
+territory-created-message: "&aTerritorio creato con successo! Raggio: %radius% blocchi"
+
+# Messaggio quando un territorio decade
+territory-decay-message: "&cIl territorio di %owner% è decaduto per inattività!"
+
+# Configurazione avanzata
+advanced:
+  # Distanza minima tra beacon (oltre al raggio dei territori)
+  minimum-beacon-distance: 8
+
+  # Permette overlap di territori dello stesso proprietario
+  allow-same-owner-overlap: false
+
+  # Numero massimo di territori per giocatore
+  max-territories-per-player: 1
+
+  # Protegge anche i cofani nei territori
+  protect-containers: true
+
+  # Previene esplosioni nei territori (TNT, Creeper, etc.)
+  prevent-explosions: true
+
+  # Permette mob spawning nei territori
+  allow-mob-spawning: true
+
+  # Previene fire spread nei territori
+  prevent-fire-spread: true
+
+# Database (per future espansioni)
+database:
+  # Tipo di storage (FILE o MYSQL)
+  type: FILE
+
+  # Configurazione MySQL (se abilitato)
+  mysql:
+    host: localhost
+    port: 3306
+    database: territorybeacons
+    username: root
+    password: password
