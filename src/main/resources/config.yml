@@ -18,8 +18,8 @@ territory-decay-message: "&cThe territory of %owner% has decayed due to inactivi
 
 # Advanced configuration
 advanced:
-  # Minimum distance between beacons (32 recommended)
-  minimum-beacon-distance: 32
+  # Minimum distance between beacons (120 recommended)
+  minimum-beacon-distance: 120
 
   # Allow overlap of territories belonging to the same owner
   allow-same-owner-overlap: false
