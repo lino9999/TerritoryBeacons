@@ -36,8 +36,8 @@ public class TerritoryBeacons extends JavaPlugin implements Listener {
     // Configuration values
     private int baseRadius = 16;
     private int radiusPerTier = 8;
-    private int decayTime = 72; // hours
-    private int minimumBeaconDistance = 32;
+    private int decayTime = 160; // hours
+    private int minimumBeaconDistance = 120;
     private int maxTerritoriesPerPlayer = 1;
     private boolean protectContainers = true;
     private boolean preventExplosions = true;
