@@ -8,6 +8,7 @@ import org.bukkit.Particle;
 import org.bukkit.World;
 import org.bukkit.block.Block;
 import org.bukkit.block.Beacon;
+import org.bukkit.block.Container;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -18,11 +19,10 @@ import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.configuration.file.FileConfiguration;
-import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.ChatColor;
 
 import java.io.File;
-import java.io.IOException;
+import java.sql.*;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -30,19 +30,26 @@ public class TerritoryBeacons extends JavaPlugin implements Listener {
 
     private Map<Location, Territory> territories = new ConcurrentHashMap<>();
     private Map<UUID, Territory> playerCurrentTerritory = new HashMap<>();
-    private FileConfiguration territoriesConfig;
-    private File territoriesFile;
+    private Map<UUID, Integer> playerTerritoryCount = new HashMap<>();
+    private Connection database;
 
     // Configuration values
     private int baseRadius = 16;
     private int radiusPerTier = 8;
     private int decayTime = 72; // hours
+    private int minimumBeaconDistance = 32;
+    private int maxTerritoriesPerPlayer = 1;
+    private boolean protectContainers = true;
+    private boolean preventExplosions = true;
 
     @Override
     public void onEnable() {
         // Load configuration
         saveDefaultConfig();
         loadConfigValues();
+
+        // Initialize database
+        initDatabase();
 
         // Register events
         getServer().getPluginManager().registerEvents(this, this);
@@ -64,7 +71,67 @@ public class TerritoryBeacons extends JavaPlugin implements Listener {
     @Override
     public void onDisable() {
         saveTerritories();
+
+        // Close database connection
+        try {
+            if (database != null && !database.isClosed()) {
+                database.close();
+            }
+        } catch (SQLException e) {
+            getLogger().severe("Error closing database: " + e.getMessage());
+        }
+
         getLogger().info("TerritoryBeacons disabled!");
+    }
+
+    private void initDatabase() {
+        try {
+            File dataFolder = getDataFolder();
+            if (!dataFolder.exists()) {
+                dataFolder.mkdirs();
+            }
+
+            File dbFile = new File(dataFolder, "territories.db");
+            String url = "jdbc:sqlite:" + dbFile.getAbsolutePath();
+
+            database = DriverManager.getConnection(url);
+
+            // Create tables
+            Statement stmt = database.createStatement();
+
+            // Territories table
+            stmt.execute("CREATE TABLE IF NOT EXISTS territories (" +
+                    "id INTEGER PRIMARY KEY AUTOINCREMENT," +
+                    "owner_uuid TEXT NOT NULL," +
+                    "owner_name TEXT NOT NULL," +
+                    "world TEXT NOT NULL," +
+                    "x INTEGER NOT NULL," +
+                    "y INTEGER NOT NULL," +
+                    "z INTEGER NOT NULL," +
+                    "radius INTEGER NOT NULL," +
+                    "tier INTEGER NOT NULL," +
+                    "influence REAL NOT NULL," +
+                    "created_at INTEGER NOT NULL," +
+                    "UNIQUE(world, x, y, z)" +
+                    ")");
+
+            // Trusted players table
+            stmt.execute("CREATE TABLE IF NOT EXISTS trusted_players (" +
+                    "territory_id INTEGER NOT NULL," +
+                    "player_uuid TEXT NOT NULL," +
+                    "FOREIGN KEY(territory_id) REFERENCES territories(id) ON DELETE CASCADE," +
+                    "PRIMARY KEY(territory_id, player_uuid)" +
+                    ")");
+
+            // Enable foreign keys
+            stmt.execute("PRAGMA foreign_keys = ON");
+
+            stmt.close();
+
+        } catch (SQLException e) {
+            getLogger().severe("Failed to initialize database: " + e.getMessage());
+            getServer().getPluginManager().disablePlugin(this);
+        }
     }
 
     public void loadConfigValues() {
@@ -72,6 +139,12 @@ public class TerritoryBeacons extends JavaPlugin implements Listener {
         baseRadius = config.getInt("base-radius", 16);
         radiusPerTier = config.getInt("radius-per-tier", 8);
         decayTime = config.getInt("decay-time-hours", 72);
+
+        // Load advanced config
+        minimumBeaconDistance = config.getInt("advanced.minimum-beacon-distance", 32);
+        maxTerritoriesPerPlayer = config.getInt("advanced.max-territories-per-player", 1);
+        protectContainers = config.getBoolean("advanced.protect-containers", true);
+        preventExplosions = config.getBoolean("advanced.prevent-explosions", true);
     }
 
     @EventHandler
@@ -80,6 +153,29 @@ public class TerritoryBeacons extends JavaPlugin implements Listener {
 
         Player player = event.getPlayer();
         Location loc = event.getBlock().getLocation();
+
+        // Check max territories per player
+        int currentTerritories = getPlayerTerritoryCount(player.getUniqueId());
+        if (currentTerritories >= maxTerritoriesPerPlayer) {
+            player.sendMessage(ChatColor.RED + "You have reached the maximum number of territories (" +
+                    maxTerritoriesPerPlayer + ")!");
+            event.setCancelled(true);
+            return;
+        }
+
+        // Check minimum distance from other beacons
+        for (Territory territory : territories.values()) {
+            Location beaconLoc = territory.getBeaconLocation();
+            if (beaconLoc.getWorld().equals(loc.getWorld())) {
+                double distance = beaconLoc.distance(loc);
+                if (distance < minimumBeaconDistance) {
+                    player.sendMessage(ChatColor.RED + "This location is too close to another beacon! " +
+                            "Minimum distance: " + minimumBeaconDistance + " blocks");
+                    event.setCancelled(true);
+                    return;
+                }
+            }
+        }
 
         // Check if location overlaps with existing territory
         for (Territory territory : territories.values()) {
@@ -90,7 +186,7 @@ public class TerritoryBeacons extends JavaPlugin implements Listener {
             }
         }
 
-        // Schedule beacon check after placement with longer delay
+        // Schedule beacon check after placement
         player.sendMessage(ChatColor.YELLOW + "Beacon placed! Activate the beacon with an effect to create the territory.");
 
         // Start checking for activation
@@ -148,8 +244,13 @@ public class TerritoryBeacons extends JavaPlugin implements Listener {
             // Remove border blocks
             removeTerritoryBorder(territory);
 
+            // Remove from database
+            removeTerritoryFromDatabase(territory);
+
             // Remove territory
             territories.remove(loc);
+            updatePlayerTerritoryCount(territory.getOwnerUUID());
+
             Bukkit.broadcastMessage(ChatColor.YELLOW + "The territory of " +
                     territory.getOwnerName() + " has been destroyed!");
         }
@@ -206,58 +307,31 @@ public class TerritoryBeacons extends JavaPlugin implements Listener {
     }
 
     @EventHandler
-    public void onPlayerDamage(EntityDamageByEntityEvent event) {
-        // Removed PvP vulnerability system
-    }
+    public void onPlayerInteract(PlayerInteractEvent event) {
+        if (event.getClickedBlock() == null) return;
 
-    @EventHandler
-    public void onExplosion(org.bukkit.event.entity.EntityExplodeEvent event) {
-        // Check if explosion is from TNT or other sources
-        Iterator<Block> iterator = event.blockList().iterator();
+        Block block = event.getClickedBlock();
+        Player player = event.getPlayer();
 
-        while (iterator.hasNext()) {
-            Block block = iterator.next();
+        // Handle beacon interactions separately
+        if (block.getType() == Material.BEACON) {
+            onBeaconInteract(event);
+            return;
+        }
+
+        // Protect containers if enabled
+        if (protectContainers && block.getState() instanceof Container) {
             Territory territory = getTerritoryAt(block.getLocation());
 
-            if (territory != null) {
-                // Remove block from explosion list if in territory
-                iterator.remove();
+            if (territory != null && !territory.canBuild(player)) {
+                player.sendMessage(ChatColor.RED + "You cannot access containers in " +
+                        territory.getOwnerName() + "'s territory!");
+                event.setCancelled(true);
             }
         }
     }
 
-    @EventHandler
-    public void onTNTPrime(org.bukkit.event.block.BlockPlaceEvent event) {
-        if (event.getBlock().getType() != Material.TNT) return;
-
-        Territory territory = getTerritoryAt(event.getBlock().getLocation());
-        if (territory != null && !territory.canBuild(event.getPlayer())) {
-            event.getPlayer().sendMessage(ChatColor.RED + "You cannot place TNT in this territory!");
-            event.setCancelled(true);
-        }
-    }
-
-    @EventHandler
-    public void onEntityExplode(org.bukkit.event.entity.EntityDamageEvent event) {
-        if (event.getCause() == org.bukkit.event.entity.EntityDamageEvent.DamageCause.BLOCK_EXPLOSION ||
-                event.getCause() == org.bukkit.event.entity.EntityDamageEvent.DamageCause.ENTITY_EXPLOSION) {
-
-            if (event.getEntity() instanceof Player) {
-                Player player = (Player) event.getEntity();
-                Territory territory = getTerritoryAt(player.getLocation());
-
-                if (territory != null) {
-                    event.setCancelled(true);
-                }
-            }
-        }
-    }
-
-    @EventHandler
     public void onBeaconInteract(PlayerInteractEvent event) {
-        if (event.getClickedBlock() == null) return;
-        if (event.getClickedBlock().getType() != Material.BEACON) return;
-
         Location loc = event.getClickedBlock().getLocation();
         Territory territory = territories.get(loc);
 
@@ -289,6 +363,36 @@ public class TerritoryBeacons extends JavaPlugin implements Listener {
         }
     }
 
+    @EventHandler
+    public void onExplosion(org.bukkit.event.entity.EntityExplodeEvent event) {
+        if (!preventExplosions) return;
+
+        // Check if explosion is from TNT or other sources
+        Iterator<Block> iterator = event.blockList().iterator();
+
+        while (iterator.hasNext()) {
+            Block block = iterator.next();
+            Territory territory = getTerritoryAt(block.getLocation());
+
+            if (territory != null) {
+                // Remove block from explosion list if in territory
+                iterator.remove();
+            }
+        }
+    }
+
+    @EventHandler
+    public void onTNTPrime(org.bukkit.event.block.BlockPlaceEvent event) {
+        if (!preventExplosions) return;
+        if (event.getBlock().getType() != Material.TNT) return;
+
+        Territory territory = getTerritoryAt(event.getBlock().getLocation());
+        if (territory != null && !territory.canBuild(event.getPlayer())) {
+            event.getPlayer().sendMessage(ChatColor.RED + "You cannot place TNT in this territory!");
+            event.setCancelled(true);
+        }
+    }
+
     private void checkAndCreateTerritory(Location loc, Player owner) {
         Block block = loc.getBlock();
         if (!(block.getState() instanceof Beacon)) return;
@@ -313,13 +417,38 @@ public class TerritoryBeacons extends JavaPlugin implements Listener {
             return;
         }
 
-        // Calculate radius (no bonus)
+        // Check max territories again
+        int currentTerritories = getPlayerTerritoryCount(owner.getUniqueId());
+        if (currentTerritories >= maxTerritoriesPerPlayer) {
+            owner.sendMessage(ChatColor.RED + "You have reached the maximum number of territories (" +
+                    maxTerritoriesPerPlayer + ")!");
+            return;
+        }
+
+        // Check minimum distance again
+        for (Territory territory : territories.values()) {
+            Location beaconLoc = territory.getBeaconLocation();
+            if (beaconLoc.getWorld().equals(loc.getWorld())) {
+                double distance = beaconLoc.distance(loc);
+                if (distance < minimumBeaconDistance) {
+                    owner.sendMessage(ChatColor.RED + "This location is too close to another beacon! " +
+                            "Minimum distance: " + minimumBeaconDistance + " blocks");
+                    return;
+                }
+            }
+        }
+
+        // Calculate radius
         int totalRadius = baseRadius + (tier * radiusPerTier);
 
         // Create territory
         Territory territory = new Territory(owner.getUniqueId(), owner.getName(),
                 loc, totalRadius, tier);
         territories.put(loc, territory);
+        updatePlayerTerritoryCount(owner.getUniqueId());
+
+        // Save to database
+        saveTerritoryToDatabase(territory);
 
         owner.sendMessage(ChatColor.GREEN + "Territory created successfully!");
         owner.sendMessage(ChatColor.AQUA + "Radius: " + totalRadius + " blocks");
@@ -335,8 +464,22 @@ public class TerritoryBeacons extends JavaPlugin implements Listener {
         // Visual effect
         spawnCreationEffect(loc);
 
-        // Create border ONCE
+        // Create border
         createTerritoryBorder(loc, territory);
+    }
+
+    private int getPlayerTerritoryCount(UUID playerUUID) {
+        int count = 0;
+        for (Territory territory : territories.values()) {
+            if (territory.getOwnerUUID().equals(playerUUID)) {
+                count++;
+            }
+        }
+        return count;
+    }
+
+    private void updatePlayerTerritoryCount(UUID playerUUID) {
+        playerTerritoryCount.put(playerUUID, getPlayerTerritoryCount(playerUUID));
     }
 
     private Territory getTerritoryAt(Location loc) {
@@ -456,8 +599,13 @@ public class TerritoryBeacons extends JavaPlugin implements Listener {
                                 // Remove border blocks first
                                 removeTerritoryBorder(territory);
 
+                                // Remove from database
+                                removeTerritoryFromDatabase(territory);
+
                                 // Remove territory
                                 iterator.remove();
+                                updatePlayerTerritoryCount(territory.getOwnerUUID());
+
                                 Location beaconLoc = entry.getKey();
                                 if (beaconLoc.getBlock().getType() == Material.BEACON) {
                                     beaconLoc.getBlock().setType(Material.AIR);
@@ -560,75 +708,229 @@ public class TerritoryBeacons extends JavaPlugin implements Listener {
     }
 
     private long getLastSeen(UUID playerUUID) {
-        // This would need to track player login/logout times
-        // For now, return current time if online, or a default offline time
         Player player = Bukkit.getPlayer(playerUUID);
         if (player != null && player.isOnline()) {
             return System.currentTimeMillis();
         }
-        // In a real implementation, this would check a stored last logout time
         return System.currentTimeMillis() - (decayTime * 60 * 60 * 1000);
     }
 
     private void loadTerritories() {
-        territoriesFile = new File(getDataFolder(), "territories.yml");
-        if (!territoriesFile.exists()) {
-            return;
-        }
+        try {
+            territories.clear();
+            playerTerritoryCount.clear();
 
-        territoriesConfig = YamlConfiguration.loadConfiguration(territoriesFile);
-
-        for (String key : territoriesConfig.getKeys(false)) {
-            String path = key + ".";
-            UUID ownerUUID = UUID.fromString(territoriesConfig.getString(path + "owner-uuid"));
-            String ownerName = territoriesConfig.getString(path + "owner-name");
-
-            Location loc = new Location(
-                    Bukkit.getWorld(territoriesConfig.getString(path + "world")),
-                    territoriesConfig.getInt(path + "x"),
-                    territoriesConfig.getInt(path + "y"),
-                    territoriesConfig.getInt(path + "z")
+            PreparedStatement stmt = database.prepareStatement(
+                    "SELECT * FROM territories"
             );
 
-            int radius = territoriesConfig.getInt(path + "radius");
-            int tier = territoriesConfig.getInt(path + "tier");
-            double influence = territoriesConfig.getDouble(path + "influence", 1.0);
+            ResultSet rs = stmt.executeQuery();
 
-            Territory territory = new Territory(ownerUUID, ownerName, loc, radius, tier);
-            territory.setInfluence(influence);
-            territories.put(loc, territory);
+            while (rs.next()) {
+                UUID ownerUUID = UUID.fromString(rs.getString("owner_uuid"));
+                String ownerName = rs.getString("owner_name");
+                String worldName = rs.getString("world");
+                World world = Bukkit.getWorld(worldName);
+
+                if (world == null) {
+                    getLogger().warning("World " + worldName + " not found, skipping territory");
+                    continue;
+                }
+
+                Location loc = new Location(
+                        world,
+                        rs.getInt("x"),
+                        rs.getInt("y"),
+                        rs.getInt("z")
+                );
+
+                int radius = rs.getInt("radius");
+                int tier = rs.getInt("tier");
+                double influence = rs.getDouble("influence");
+
+                Territory territory = new Territory(ownerUUID, ownerName, loc, radius, tier);
+                territory.setInfluence(influence);
+
+                // Load trusted players
+                loadTrustedPlayers(territory, rs.getInt("id"));
+
+                territories.put(loc, territory);
+
+                // Recreate border
+                createTerritoryBorder(loc, territory);
+            }
+
+            rs.close();
+            stmt.close();
+
+            // Update player territory counts
+            for (Territory territory : territories.values()) {
+                updatePlayerTerritoryCount(territory.getOwnerUUID());
+            }
+
+            getLogger().info("Loaded " + territories.size() + " territories from database");
+
+        } catch (SQLException e) {
+            getLogger().severe("Error loading territories: " + e.getMessage());
+        }
+    }
+
+    private void loadTrustedPlayers(Territory territory, int territoryId) throws SQLException {
+        PreparedStatement stmt = database.prepareStatement(
+                "SELECT player_uuid FROM trusted_players WHERE territory_id = ?"
+        );
+        stmt.setInt(1, territoryId);
+
+        ResultSet rs = stmt.executeQuery();
+
+        while (rs.next()) {
+            UUID playerUUID = UUID.fromString(rs.getString("player_uuid"));
+            territory.addTrustedPlayer(playerUUID);
         }
 
-        getLogger().info("Loaded " + territories.size() + " territories");
+        rs.close();
+        stmt.close();
     }
 
     private void saveTerritories() {
-        territoriesFile = new File(getDataFolder(), "territories.yml");
-        territoriesConfig = new YamlConfiguration();
+        try {
+            // Update all territories
+            for (Map.Entry<Location, Territory> entry : territories.entrySet()) {
+                Territory territory = entry.getValue();
+                updateTerritoryInDatabase(territory);
+            }
+        } catch (Exception e) {
+            getLogger().severe("Error saving territories: " + e.getMessage());
+        }
+    }
 
-        int index = 0;
-        for (Map.Entry<Location, Territory> entry : territories.entrySet()) {
-            Location loc = entry.getKey();
-            Territory territory = entry.getValue();
+    private void saveTerritoryToDatabase(Territory territory) {
+        try {
+            PreparedStatement stmt = database.prepareStatement(
+                    "INSERT INTO territories (owner_uuid, owner_name, world, x, y, z, radius, tier, influence, created_at) " +
+                            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+            );
 
-            String path = "territory" + index + ".";
-            territoriesConfig.set(path + "owner-uuid", territory.getOwnerUUID().toString());
-            territoriesConfig.set(path + "owner-name", territory.getOwnerName());
-            territoriesConfig.set(path + "world", loc.getWorld().getName());
-            territoriesConfig.set(path + "x", loc.getBlockX());
-            territoriesConfig.set(path + "y", loc.getBlockY());
-            territoriesConfig.set(path + "z", loc.getBlockZ());
-            territoriesConfig.set(path + "radius", territory.getRadius());
-            territoriesConfig.set(path + "tier", territory.getTier());
-            territoriesConfig.set(path + "influence", territory.getInfluence());
+            Location loc = territory.getBeaconLocation();
+            stmt.setString(1, territory.getOwnerUUID().toString());
+            stmt.setString(2, territory.getOwnerName());
+            stmt.setString(3, loc.getWorld().getName());
+            stmt.setInt(4, loc.getBlockX());
+            stmt.setInt(5, loc.getBlockY());
+            stmt.setInt(6, loc.getBlockZ());
+            stmt.setInt(7, territory.getRadius());
+            stmt.setInt(8, territory.getTier());
+            stmt.setDouble(9, territory.getInfluence());
+            stmt.setLong(10, System.currentTimeMillis());
 
-            index++;
+            stmt.executeUpdate();
+            stmt.close();
+
+        } catch (SQLException e) {
+            getLogger().severe("Error saving territory to database: " + e.getMessage());
+        }
+    }
+
+    private void updateTerritoryInDatabase(Territory territory) {
+        try {
+            PreparedStatement stmt = database.prepareStatement(
+                    "UPDATE territories SET influence = ? WHERE owner_uuid = ? AND world = ? AND x = ? AND y = ? AND z = ?"
+            );
+
+            stmt.setDouble(1, territory.getInfluence());
+            stmt.setString(2, territory.getOwnerUUID().toString());
+
+            Location loc = territory.getBeaconLocation();
+            stmt.setString(3, loc.getWorld().getName());
+            stmt.setInt(4, loc.getBlockX());
+            stmt.setInt(5, loc.getBlockY());
+            stmt.setInt(6, loc.getBlockZ());
+
+            stmt.executeUpdate();
+            stmt.close();
+
+            // Get territory ID for trusted players update
+            int territoryId = getTerritoryId(territory);
+            if (territoryId != -1) {
+                updateTrustedPlayers(territory, territoryId);
+            }
+
+        } catch (SQLException e) {
+            getLogger().severe("Error updating territory in database: " + e.getMessage());
+        }
+    }
+
+    private int getTerritoryId(Territory territory) {
+        try {
+            PreparedStatement stmt = database.prepareStatement(
+                    "SELECT id FROM territories WHERE owner_uuid = ? AND world = ? AND x = ? AND y = ? AND z = ?"
+            );
+
+            stmt.setString(1, territory.getOwnerUUID().toString());
+            Location loc = territory.getBeaconLocation();
+            stmt.setString(2, loc.getWorld().getName());
+            stmt.setInt(3, loc.getBlockX());
+            stmt.setInt(4, loc.getBlockY());
+            stmt.setInt(5, loc.getBlockZ());
+
+            ResultSet rs = stmt.executeQuery();
+            int id = -1;
+            if (rs.next()) {
+                id = rs.getInt("id");
+            }
+
+            rs.close();
+            stmt.close();
+
+            return id;
+
+        } catch (SQLException e) {
+            getLogger().severe("Error getting territory ID: " + e.getMessage());
+            return -1;
+        }
+    }
+
+    private void updateTrustedPlayers(Territory territory, int territoryId) throws SQLException {
+        // Clear existing trusted players
+        PreparedStatement deleteStmt = database.prepareStatement(
+                "DELETE FROM trusted_players WHERE territory_id = ?"
+        );
+        deleteStmt.setInt(1, territoryId);
+        deleteStmt.executeUpdate();
+        deleteStmt.close();
+
+        // Insert current trusted players
+        PreparedStatement insertStmt = database.prepareStatement(
+                "INSERT INTO trusted_players (territory_id, player_uuid) VALUES (?, ?)"
+        );
+
+        for (UUID trustedUUID : territory.getTrustedPlayers()) {
+            insertStmt.setInt(1, territoryId);
+            insertStmt.setString(2, trustedUUID.toString());
+            insertStmt.executeUpdate();
         }
 
+        insertStmt.close();
+    }
+
+    private void removeTerritoryFromDatabase(Territory territory) {
         try {
-            territoriesConfig.save(territoriesFile);
-        } catch (IOException e) {
-            getLogger().severe("Could not save territories: " + e.getMessage());
+            PreparedStatement stmt = database.prepareStatement(
+                    "DELETE FROM territories WHERE owner_uuid = ? AND world = ? AND x = ? AND y = ? AND z = ?"
+            );
+
+            stmt.setString(1, territory.getOwnerUUID().toString());
+            Location loc = territory.getBeaconLocation();
+            stmt.setString(2, loc.getWorld().getName());
+            stmt.setInt(3, loc.getBlockX());
+            stmt.setInt(4, loc.getBlockY());
+            stmt.setInt(5, loc.getBlockZ());
+
+            stmt.executeUpdate();
+            stmt.close();
+
+        } catch (SQLException e) {
+            getLogger().severe("Error removing territory from database: " + e.getMessage());
         }
     }
 
@@ -644,5 +946,13 @@ public class TerritoryBeacons extends JavaPlugin implements Listener {
             }
         }
         return null;
+    }
+
+    public int getPlayerTerritoryCount(Player player) {
+        return getPlayerTerritoryCount(player.getUniqueId());
+    }
+
+    public int getMaxTerritoriesPerPlayer() {
+        return maxTerritoriesPerPlayer;
     }
 }

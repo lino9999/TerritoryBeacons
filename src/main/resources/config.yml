@@ -38,16 +38,3 @@ advanced:
 
   # Prevent fire spread within territories
   prevent-fire-spread: true
-
-# Database (for future expansions)
-database:
-  # Storage type (FILE or MYSQL)
-  type: FILE
-
-  # MySQL configuration (if enabled)
-  mysql:
-    host: localhost
-    port: 3306
-    database: territorybeacons
-    username: root
-    password: password
