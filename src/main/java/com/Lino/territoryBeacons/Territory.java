@@ -12,7 +12,7 @@ public class Territory {
     private final Location beaconLocation;
     private final int radius;
     private final int tier;
-    private double influence = 1.0; // 0.0 to 1.0
+    private double influence = 1.0;
     private Set<UUID> trustedPlayers = new HashSet<>();
     private Set<Location> borderBlocks = new HashSet<>();
 
@@ -28,7 +28,6 @@ public class Territory {
         if (!location.getWorld().equals(beaconLocation.getWorld())) {
             return false;
         }
-
         double distance = location.distance(beaconLocation);
         return distance <= radius;
     }
@@ -37,24 +36,17 @@ public class Territory {
         if (!otherBeacon.getWorld().equals(beaconLocation.getWorld())) {
             return false;
         }
-
         double distance = otherBeacon.distance(beaconLocation);
-        // Territories cannot overlap, minimum distance is sum of radii + buffer
-        return distance < (radius + 16 + 8); // Base radius + buffer
+        return distance < (radius + 16 + 8);
     }
 
     public boolean canBuild(Player player) {
-        // Owner can always build
         if (player.getUniqueId().equals(ownerUUID)) {
             return true;
         }
-
-        // Admins can build
         if (player.hasPermission("territory.admin")) {
             return true;
         }
-
-        // Trusted players can build
         return trustedPlayers.contains(player.getUniqueId());
     }
 
@@ -94,7 +86,6 @@ public class Territory {
         borderBlocks.clear();
     }
 
-    // Getters
     public UUID getOwnerUUID() {
         return ownerUUID;
     }
@@ -123,7 +114,6 @@ public class Territory {
         return new HashSet<>(trustedPlayers);
     }
 
-    // Setters
     public void setInfluence(double influence) {
         this.influence = Math.max(0.0, Math.min(1.0, influence));
     }

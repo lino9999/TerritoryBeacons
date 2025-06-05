@@ -1,5 +1,4 @@
 # TerritoryBeacons Configuration
-# Plugin created to manage territories using powered beacons
 
 # Base radius for level 1 beacon (in blocks)
 base-radius: 16

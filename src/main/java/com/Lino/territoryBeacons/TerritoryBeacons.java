@@ -33,10 +33,9 @@ public class TerritoryBeacons extends JavaPlugin implements Listener {
     private Map<UUID, Integer> playerTerritoryCount = new HashMap<>();
     private Connection database;
 
-    // Configuration values
     private int baseRadius = 16;
     private int radiusPerTier = 8;
-    private int decayTime = 160; // hours
+    private int decayTime = 160;
     private int minimumBeaconDistance = 120;
     private int maxTerritoriesPerPlayer = 1;
     private boolean protectContainers = true;
@@ -44,35 +43,21 @@ public class TerritoryBeacons extends JavaPlugin implements Listener {
 
     @Override
     public void onEnable() {
-        // Load configuration
         saveDefaultConfig();
         loadConfigValues();
-
-        // Initialize database
         initDatabase();
-
-        // Register events
         getServer().getPluginManager().registerEvents(this, this);
-
-        // Load territories
         loadTerritories();
-
-        // Start tasks
         startDecayTask();
         startSaveTask();
         startTerritoryCheckTask();
-
-        // Register commands
         getCommand("territory").setExecutor(new TerritoryCommand(this));
-
         getLogger().info("TerritoryBeacons enabled!");
     }
 
     @Override
     public void onDisable() {
         saveTerritories();
-
-        // Close database connection
         try {
             if (database != null && !database.isClosed()) {
                 database.close();
@@ -80,7 +65,6 @@ public class TerritoryBeacons extends JavaPlugin implements Listener {
         } catch (SQLException e) {
             getLogger().severe("Error closing database: " + e.getMessage());
         }
-
         getLogger().info("TerritoryBeacons disabled!");
     }
 
@@ -96,10 +80,8 @@ public class TerritoryBeacons extends JavaPlugin implements Listener {
 
             database = DriverManager.getConnection(url);
 
-            // Create tables
             Statement stmt = database.createStatement();
 
-            // Territories table
             stmt.execute("CREATE TABLE IF NOT EXISTS territories (" +
                     "id INTEGER PRIMARY KEY AUTOINCREMENT," +
                     "owner_uuid TEXT NOT NULL," +
@@ -115,7 +97,6 @@ public class TerritoryBeacons extends JavaPlugin implements Listener {
                     "UNIQUE(world, x, y, z)" +
                     ")");
 
-            // Trusted players table
             stmt.execute("CREATE TABLE IF NOT EXISTS trusted_players (" +
                     "territory_id INTEGER NOT NULL," +
                     "player_uuid TEXT NOT NULL," +
@@ -123,7 +104,6 @@ public class TerritoryBeacons extends JavaPlugin implements Listener {
                     "PRIMARY KEY(territory_id, player_uuid)" +
                     ")");
 
-            // Enable foreign keys
             stmt.execute("PRAGMA foreign_keys = ON");
 
             stmt.close();
@@ -139,8 +119,6 @@ public class TerritoryBeacons extends JavaPlugin implements Listener {
         baseRadius = config.getInt("base-radius", 16);
         radiusPerTier = config.getInt("radius-per-tier", 8);
         decayTime = config.getInt("decay-time-hours", 72);
-
-        // Load advanced config
         minimumBeaconDistance = config.getInt("advanced.minimum-beacon-distance", 32);
         maxTerritoriesPerPlayer = config.getInt("advanced.max-territories-per-player", 1);
         protectContainers = config.getBoolean("advanced.protect-containers", true);
@@ -154,7 +132,6 @@ public class TerritoryBeacons extends JavaPlugin implements Listener {
         Player player = event.getPlayer();
         Location loc = event.getBlock().getLocation();
 
-        // Check max territories per player
         int currentTerritories = getPlayerTerritoryCount(player.getUniqueId());
         if (currentTerritories >= maxTerritoriesPerPlayer) {
             player.sendMessage(ChatColor.RED + "You have reached the maximum number of territories (" +
@@ -163,7 +140,6 @@ public class TerritoryBeacons extends JavaPlugin implements Listener {
             return;
         }
 
-        // Check minimum distance from other beacons
         for (Territory territory : territories.values()) {
             Location beaconLoc = territory.getBeaconLocation();
             if (beaconLoc.getWorld().equals(loc.getWorld())) {
@@ -177,7 +153,6 @@ public class TerritoryBeacons extends JavaPlugin implements Listener {
             }
         }
 
-        // Check if location overlaps with existing territory
         for (Territory territory : territories.values()) {
             if (territory.overlaps(loc)) {
                 player.sendMessage(ChatColor.RED + "This location is too close to another territory!");
@@ -186,16 +161,14 @@ public class TerritoryBeacons extends JavaPlugin implements Listener {
             }
         }
 
-        // Schedule beacon check after placement
         player.sendMessage(ChatColor.YELLOW + "Beacon placed! Activate the beacon with an effect to create the territory.");
 
-        // Start checking for activation
         new BukkitRunnable() {
             int attempts = 0;
 
             @Override
             public void run() {
-                if (attempts >= 60) { // Stop after 1 minute
+                if (attempts >= 60) {
                     cancel();
                     return;
                 }
@@ -209,7 +182,6 @@ public class TerritoryBeacons extends JavaPlugin implements Listener {
                 if (block.getState() instanceof Beacon) {
                     Beacon beacon = (Beacon) block.getState();
 
-                    // Check if beacon is activated (has a primary effect)
                     if (beacon.getTier() > 0 && beacon.getPrimaryEffect() != null) {
                         checkAndCreateTerritory(loc, player);
                         cancel();
@@ -219,7 +191,7 @@ public class TerritoryBeacons extends JavaPlugin implements Listener {
 
                 attempts++;
             }
-        }.runTaskTimer(this, 20L, 20L); // Check every second
+        }.runTaskTimer(this, 20L, 20L);
     }
 
     @EventHandler
@@ -232,7 +204,6 @@ public class TerritoryBeacons extends JavaPlugin implements Listener {
         if (territory != null) {
             Player breaker = event.getPlayer();
 
-            // Check ownership
             if (!territory.getOwnerUUID().equals(breaker.getUniqueId()) &&
                     !breaker.hasPermission("territory.admin")) {
 
@@ -241,13 +212,8 @@ public class TerritoryBeacons extends JavaPlugin implements Listener {
                 return;
             }
 
-            // Remove border blocks
             removeTerritoryBorder(territory);
-
-            // Remove from database
             removeTerritoryFromDatabase(territory);
-
-            // Remove territory
             territories.remove(loc);
             updatePlayerTerritoryCount(territory.getOwnerUUID());
 
@@ -262,9 +228,7 @@ public class TerritoryBeacons extends JavaPlugin implements Listener {
         Block block = event.getBlock();
         Location blockLoc = block.getLocation();
 
-        // Check if it's a border torch
         if (block.getType() == Material.TORCH) {
-            // Check all territories to see if this is a border block
             for (Territory territory : territories.values()) {
                 if (territory.getBorderBlocks().contains(blockLoc)) {
                     event.setCancelled(true);
@@ -274,9 +238,7 @@ public class TerritoryBeacons extends JavaPlugin implements Listener {
             }
         }
 
-        // Special handling for beacons
         if (block.getType() == Material.BEACON) {
-            // This is handled in onBeaconBreak
             return;
         }
 
@@ -293,7 +255,6 @@ public class TerritoryBeacons extends JavaPlugin implements Listener {
         Player player = event.getPlayer();
         Block block = event.getBlock();
 
-        // Special handling for beacons - don't check territory for beacon placement
         if (block.getType() == Material.BEACON) {
             return;
         }
@@ -313,13 +274,11 @@ public class TerritoryBeacons extends JavaPlugin implements Listener {
         Block block = event.getClickedBlock();
         Player player = event.getPlayer();
 
-        // Handle beacon interactions separately
         if (block.getType() == Material.BEACON) {
             onBeaconInteract(event);
             return;
         }
 
-        // Protect containers if enabled
         if (protectContainers && block.getState() instanceof Container) {
             Territory territory = getTerritoryAt(block.getLocation());
 
@@ -344,22 +303,19 @@ public class TerritoryBeacons extends JavaPlugin implements Listener {
             player.sendMessage(ChatColor.AQUA + "Influence: " + ChatColor.WHITE +
                     String.format("%.1f%%", territory.getInfluence() * 100));
         } else {
-            // Not a territory yet, check if it can become one after this interaction
             Player player = event.getPlayer();
 
-            // Schedule a check after the inventory closes
             Bukkit.getScheduler().runTaskLater(this, () -> {
                 Block block = loc.getBlock();
                 if (block.getType() == Material.BEACON && block.getState() instanceof Beacon) {
                     Beacon beacon = (Beacon) block.getState();
 
                     if (beacon.getTier() > 0 && beacon.getPrimaryEffect() != null && !territories.containsKey(loc)) {
-                        // Ask player if they want to create territory
                         player.sendMessage(ChatColor.GREEN + "Beacon activated! Creating territory...");
                         checkAndCreateTerritory(loc, player);
                     }
                 }
-            }, 60L); // 3 seconds delay to allow GUI interaction
+            }, 60L);
         }
     }
 
@@ -367,7 +323,6 @@ public class TerritoryBeacons extends JavaPlugin implements Listener {
     public void onExplosion(org.bukkit.event.entity.EntityExplodeEvent event) {
         if (!preventExplosions) return;
 
-        // Check if explosion is from TNT or other sources
         Iterator<Block> iterator = event.blockList().iterator();
 
         while (iterator.hasNext()) {
@@ -375,7 +330,6 @@ public class TerritoryBeacons extends JavaPlugin implements Listener {
             Territory territory = getTerritoryAt(block.getLocation());
 
             if (territory != null) {
-                // Remove block from explosion list if in territory
                 iterator.remove();
             }
         }
@@ -405,19 +359,16 @@ public class TerritoryBeacons extends JavaPlugin implements Listener {
             return;
         }
 
-        // Check if beacon has an active effect
         if (beacon.getPrimaryEffect() == null) {
             owner.sendMessage(ChatColor.RED + "The beacon must have an active effect! Insert an ingot and select a power.");
             return;
         }
 
-        // Check if already a territory
         if (territories.containsKey(loc)) {
             owner.sendMessage(ChatColor.YELLOW + "This beacon is already a territory!");
             return;
         }
 
-        // Check max territories again
         int currentTerritories = getPlayerTerritoryCount(owner.getUniqueId());
         if (currentTerritories >= maxTerritoriesPerPlayer) {
             owner.sendMessage(ChatColor.RED + "You have reached the maximum number of territories (" +
@@ -425,7 +376,6 @@ public class TerritoryBeacons extends JavaPlugin implements Listener {
             return;
         }
 
-        // Check minimum distance again
         for (Territory territory : territories.values()) {
             Location beaconLoc = territory.getBeaconLocation();
             if (beaconLoc.getWorld().equals(loc.getWorld())) {
@@ -438,33 +388,25 @@ public class TerritoryBeacons extends JavaPlugin implements Listener {
             }
         }
 
-        // Calculate radius
         int totalRadius = baseRadius + (tier * radiusPerTier);
 
-        // Create territory
         Territory territory = new Territory(owner.getUniqueId(), owner.getName(),
                 loc, totalRadius, tier);
         territories.put(loc, territory);
         updatePlayerTerritoryCount(owner.getUniqueId());
-
-        // Save to database
         saveTerritoryToDatabase(territory);
 
         owner.sendMessage(ChatColor.GREEN + "Territory created successfully!");
         owner.sendMessage(ChatColor.AQUA + "Radius: " + totalRadius + " blocks");
         owner.sendMessage(ChatColor.AQUA + "Beacon level: " + tier);
 
-        // Broadcast to nearby players
         for (Player p : loc.getWorld().getPlayers()) {
             if (p != owner && p.getLocation().distance(loc) < 100) {
                 p.sendMessage(ChatColor.YELLOW + owner.getName() + " has created a new territory!");
             }
         }
 
-        // Visual effect
         spawnCreationEffect(loc);
-
-        // Create border
         createTerritoryBorder(loc, territory);
     }
 
@@ -495,26 +437,20 @@ public class TerritoryBeacons extends JavaPlugin implements Listener {
         World world = center.getWorld();
         int radius = territory.getRadius();
 
-        // Clear any existing border first
         removeTerritoryBorder(territory);
 
-        // Place torches at border
-        for (int angle = 0; angle < 360; angle += 10) { // Every 10 degrees for torches
+        for (int angle = 0; angle < 360; angle += 10) {
             double rad = Math.toRadians(angle);
             double x = center.getX() + radius * Math.cos(rad);
             double z = center.getZ() + radius * Math.sin(rad);
 
-            // Find the highest block at this location
             Location borderLoc = new Location(world, x, world.getMaxHeight() - 1, z);
             Block highestBlock = world.getHighestBlockAt(borderLoc);
             Location placeLoc = highestBlock.getLocation().add(0, 1, 0);
 
-            // Check if we should place a torch
             Block targetBlock = placeLoc.getBlock();
 
-            // Only place if air and on border
             if (targetBlock.getType() == Material.AIR && isOnBorder(placeLoc, center, radius)) {
-                // Check if the block below can support a torch
                 Block blockBelow = targetBlock.getRelative(0, -1, 0);
                 if (blockBelow.getType().isSolid()) {
                     targetBlock.setType(Material.TORCH);
@@ -529,13 +465,10 @@ public class TerritoryBeacons extends JavaPlugin implements Listener {
                 Math.pow(loc.getX() - center.getX(), 2) +
                         Math.pow(loc.getZ() - center.getZ(), 2)
         );
-
-        // Check if within 1 block of the exact radius
         return Math.abs(distance - radius) < 1.5;
     }
 
     private void removeTerritoryBorder(Territory territory) {
-        // Remove all border blocks when territory is removed
         for (Location loc : territory.getBorderBlocks()) {
             Block block = loc.getBlock();
             if (block.getType() == Material.TORCH) {
@@ -547,7 +480,6 @@ public class TerritoryBeacons extends JavaPlugin implements Listener {
     private void spawnCreationEffect(Location loc) {
         World world = loc.getWorld();
 
-        // Expanding ring effect
         new BukkitRunnable() {
             double radius = 0;
 
@@ -573,7 +505,6 @@ public class TerritoryBeacons extends JavaPlugin implements Listener {
     }
 
     private void startDecayTask() {
-        // Run every hour
         new BukkitRunnable() {
             @Override
             public void run() {
@@ -584,25 +515,18 @@ public class TerritoryBeacons extends JavaPlugin implements Listener {
                     Map.Entry<Location, Territory> entry = iterator.next();
                     Territory territory = entry.getValue();
 
-                    // Check if owner has been offline too long
                     Player owner = Bukkit.getPlayer(territory.getOwnerUUID());
                     if (owner == null || !owner.isOnline()) {
                         long lastSeen = getLastSeen(territory.getOwnerUUID());
                         long hoursOffline = (currentTime - lastSeen) / (1000 * 60 * 60);
 
                         if (hoursOffline >= decayTime) {
-                            // Decay influence
                             double decay = 0.1 * (hoursOffline - decayTime + 1);
                             territory.decayInfluence(decay);
 
                             if (territory.getInfluence() <= 0) {
-                                // Remove border blocks first
                                 removeTerritoryBorder(territory);
-
-                                // Remove from database
                                 removeTerritoryFromDatabase(territory);
-
-                                // Remove territory
                                 iterator.remove();
                                 updatePlayerTerritoryCount(territory.getOwnerUUID());
 
@@ -619,16 +543,14 @@ public class TerritoryBeacons extends JavaPlugin implements Listener {
                             }
                         }
                     } else {
-                        // Owner is online, restore influence slowly
                         territory.restoreInfluence(0.05);
                     }
                 }
             }
-        }.runTaskTimer(this, 20 * 60 * 60, 20 * 60 * 60); // Every hour
+        }.runTaskTimer(this, 20 * 60 * 60, 20 * 60 * 60);
     }
 
     private void startSaveTask() {
-        // Auto-save every 5 minutes
         new BukkitRunnable() {
             @Override
             public void run() {
@@ -638,7 +560,6 @@ public class TerritoryBeacons extends JavaPlugin implements Listener {
     }
 
     private void startTerritoryCheckTask() {
-        // Check player positions every 10 ticks (0.5 seconds)
         new BukkitRunnable() {
             @Override
             public void run() {
@@ -656,15 +577,12 @@ public class TerritoryBeacons extends JavaPlugin implements Listener {
         Territory currentTerritory = getTerritoryAt(playerLoc);
         Territory previousTerritory = playerCurrentTerritory.get(playerUUID);
 
-        // Player entered a new territory
         if (currentTerritory != null && !currentTerritory.equals(previousTerritory)) {
             playerCurrentTerritory.put(playerUUID, currentTerritory);
 
-            // Show title
             String title = ChatColor.AQUA + "Territory of";
             String subtitle = ChatColor.GOLD + currentTerritory.getOwnerName();
 
-            // Different color if it's their own territory
             if (currentTerritory.getOwnerUUID().equals(playerUUID)) {
                 title = ChatColor.GREEN + "Your territory";
                 subtitle = ChatColor.GRAY + "You are safe here";
@@ -673,20 +591,13 @@ public class TerritoryBeacons extends JavaPlugin implements Listener {
             }
 
             player.sendTitle(title, subtitle, 10, 40, 10);
-
-            // Play sound
             player.playSound(player.getLocation(),
                     org.bukkit.Sound.BLOCK_NOTE_BLOCK_CHIME, 0.5f, 1.0f);
         }
-        // Player left a territory
         else if (currentTerritory == null && previousTerritory != null) {
             playerCurrentTerritory.remove(playerUUID);
-
-            // Show exit title
             player.sendTitle(ChatColor.GRAY + "Free Territory",
                     ChatColor.DARK_GRAY + "You have left the protected territory", 10, 30, 10);
-
-            // Play sound
             player.playSound(player.getLocation(),
                     org.bukkit.Sound.BLOCK_NOTE_BLOCK_BASS, 0.5f, 0.8f);
         }
@@ -694,7 +605,6 @@ public class TerritoryBeacons extends JavaPlugin implements Listener {
 
     @EventHandler
     public void onPlayerJoin(org.bukkit.event.player.PlayerJoinEvent event) {
-        // Check territory on join
         Player player = event.getPlayer();
         Bukkit.getScheduler().runTaskLater(this, () -> {
             checkPlayerTerritory(player);
@@ -703,7 +613,6 @@ public class TerritoryBeacons extends JavaPlugin implements Listener {
 
     @EventHandler
     public void onPlayerQuit(org.bukkit.event.player.PlayerQuitEvent event) {
-        // Clean up on quit
         playerCurrentTerritory.remove(event.getPlayer().getUniqueId());
     }
 
@@ -750,20 +659,14 @@ public class TerritoryBeacons extends JavaPlugin implements Listener {
 
                 Territory territory = new Territory(ownerUUID, ownerName, loc, radius, tier);
                 territory.setInfluence(influence);
-
-                // Load trusted players
                 loadTrustedPlayers(territory, rs.getInt("id"));
-
                 territories.put(loc, territory);
-
-                // Recreate border
                 createTerritoryBorder(loc, territory);
             }
 
             rs.close();
             stmt.close();
 
-            // Update player territory counts
             for (Territory territory : territories.values()) {
                 updatePlayerTerritoryCount(territory.getOwnerUUID());
             }
@@ -794,7 +697,6 @@ public class TerritoryBeacons extends JavaPlugin implements Listener {
 
     private void saveTerritories() {
         try {
-            // Update all territories
             for (Map.Entry<Location, Territory> entry : territories.entrySet()) {
                 Territory territory = entry.getValue();
                 updateTerritoryInDatabase(territory);
@@ -849,7 +751,6 @@ public class TerritoryBeacons extends JavaPlugin implements Listener {
             stmt.executeUpdate();
             stmt.close();
 
-            // Get territory ID for trusted players update
             int territoryId = getTerritoryId(territory);
             if (territoryId != -1) {
                 updateTrustedPlayers(territory, territoryId);
@@ -891,7 +792,6 @@ public class TerritoryBeacons extends JavaPlugin implements Listener {
     }
 
     private void updateTrustedPlayers(Territory territory, int territoryId) throws SQLException {
-        // Clear existing trusted players
         PreparedStatement deleteStmt = database.prepareStatement(
                 "DELETE FROM trusted_players WHERE territory_id = ?"
         );
@@ -899,7 +799,6 @@ public class TerritoryBeacons extends JavaPlugin implements Listener {
         deleteStmt.executeUpdate();
         deleteStmt.close();
 
-        // Insert current trusted players
         PreparedStatement insertStmt = database.prepareStatement(
                 "INSERT INTO trusted_players (territory_id, player_uuid) VALUES (?, ?)"
         );
@@ -934,7 +833,6 @@ public class TerritoryBeacons extends JavaPlugin implements Listener {
         }
     }
 
-    // Getters for other classes
     public Map<Location, Territory> getTerritories() {
         return new HashMap<>(territories);
     }
