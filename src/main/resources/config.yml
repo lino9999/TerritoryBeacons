@@ -15,6 +15,27 @@ territory-created-message: "&aTerritory created successfully! Radius: %radius% b
 # Message when a territory decays
 territory-decay-message: "&cThe territory of %owner% has decayed due to inactivity!"
 
+# Territory upgrade tiers
+tiers:
+  tier-1:
+    radius: 16
+    upgrade-cost: 0
+  tier-2:
+    radius: 32
+    upgrade-cost: 10
+  tier-3:
+    radius: 48
+    upgrade-cost: 20
+  tier-4:
+    radius: 64
+    upgrade-cost: 35
+  tier-5:
+    radius: 80
+    upgrade-cost: 50
+  tier-6:
+    radius: 100
+    upgrade-cost: 75
+
 # Advanced configuration
 advanced:
   # Minimum distance between beacons (120 recommended)
