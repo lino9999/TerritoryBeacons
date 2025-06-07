@@ -1,11 +1,5 @@
 # TerritoryBeacons Configuration
 
-# Base radius for level 1 beacon (in blocks)
-base-radius: 16
-
-# Additional radius for each beacon tier
-radius-per-tier: 8
-
 # Inactivity time before the territory starts to decay (in hours)
 decay-time-hours: 160
 

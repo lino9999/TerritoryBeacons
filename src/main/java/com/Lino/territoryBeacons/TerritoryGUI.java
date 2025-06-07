@@ -28,15 +28,14 @@ public class TerritoryGUI {
         ItemMeta createMeta = createButton.getItemMeta();
         createMeta.setDisplayName(ChatColor.GREEN + "Create Territory");
 
-        Beacon beacon = (Beacon) beaconLocation.getBlock().getState();
-        int tier = beacon.getTier();
+        int tier = 1;
         int radius = plugin.getRadiusForTier(tier);
 
         List<String> lore = new ArrayList<>();
         lore.add(ChatColor.GRAY + "Click to create your territory");
         lore.add("");
-        lore.add(ChatColor.AQUA + "Beacon Level: " + ChatColor.WHITE + tier);
-        lore.add(ChatColor.AQUA + "Territory Radius: " + ChatColor.WHITE + radius + " blocks");
+        lore.add(ChatColor.AQUA + "Starting Level: " + ChatColor.WHITE + tier);
+        lore.add(ChatColor.AQUA + "Starting Radius: " + ChatColor.WHITE + radius + " blocks");
         lore.add("");
         lore.add(ChatColor.YELLOW + "Territories Owned: " + ChatColor.WHITE +
                 plugin.getPlayerTerritoryCount(player) + "/" + plugin.getMaxTerritoriesPerPlayer());
@@ -68,17 +67,29 @@ public class TerritoryGUI {
         infoLore.add(ChatColor.AQUA + "Owner: " + ChatColor.WHITE + territory.getOwnerName());
         infoLore.add(ChatColor.AQUA + "Radius: " + ChatColor.WHITE + territory.getRadius() + " blocks");
         infoLore.add(ChatColor.AQUA + "Level: " + ChatColor.WHITE + territory.getTier());
-        infoLore.add(ChatColor.AQUA + "Influence: " + ChatColor.WHITE +
-                String.format("%.1f%%", territory.getInfluence() * 100));
 
-        long hoursUntilDecay = calculateHoursUntilDecay(territory);
-        if (hoursUntilDecay > 0) {
-            long hours = hoursUntilDecay;
-            long minutes = ((plugin.getDecayTime() - hoursUntilDecay) * 60) % 60;
-            infoLore.add(ChatColor.RED + "Decay in: " + ChatColor.WHITE +
-                    hours + "h " + minutes + "m");
+        Player owner = Bukkit.getPlayer(territory.getOwnerUUID());
+        if (owner != null && owner.isOnline()) {
+            infoLore.add(ChatColor.GREEN + "Territory is active (Owner online)");
         } else {
-            infoLore.add(ChatColor.GREEN + "Territory is active");
+            long lastSeen = plugin.getPlayerLastSeen(territory.getOwnerUUID());
+            long currentTime = System.currentTimeMillis();
+            long millisecondsOffline = currentTime - lastSeen;
+            long decayStartMillis = plugin.getDecayTime() * 60L * 60L * 1000L;
+
+            if (millisecondsOffline < decayStartMillis) {
+                long remainingMillis = decayStartMillis - millisecondsOffline;
+                long hours = remainingMillis / (1000 * 60 * 60);
+                long minutes = (remainingMillis % (1000 * 60 * 60)) / (1000 * 60);
+                infoLore.add(ChatColor.RED + "Decay in: " + ChatColor.WHITE +
+                        hours + "h " + minutes + "m");
+            } else if (territory.getInfluence() > 0) {
+                long decayHours = (long) (territory.getInfluence() * 10);
+                infoLore.add(ChatColor.RED + "Decaying! " + ChatColor.WHITE +
+                        decayHours + "h remaining");
+            } else {
+                infoLore.add(ChatColor.DARK_RED + "Territory will be destroyed soon!");
+            }
         }
 
         infoMeta.setLore(infoLore);
@@ -117,6 +128,16 @@ public class TerritoryGUI {
         gui.setItem(13, infoItem);
         if (territory.getOwnerUUID().equals(player.getUniqueId())) {
             gui.setItem(29, upgradeButton);
+
+            ItemStack deleteButton = new ItemStack(Material.TNT);
+            ItemMeta deleteMeta = deleteButton.getItemMeta();
+            deleteMeta.setDisplayName(ChatColor.DARK_RED + "Delete Territory");
+            List<String> deleteLore = new ArrayList<>();
+            deleteLore.add(ChatColor.RED + "WARNING: This action cannot be undone!");
+            deleteLore.add(ChatColor.GRAY + "Click to destroy your territory");
+            deleteMeta.setLore(deleteLore);
+            deleteButton.setItemMeta(deleteMeta);
+            gui.setItem(33, deleteButton);
         }
         gui.setItem(31, trustedButton);
         gui.setItem(40, closeButton);
@@ -180,6 +201,47 @@ public class TerritoryGUI {
         player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BLOCK_PLING, 0.8f, 1.2f);
     }
 
+    public void openDeleteConfirmationGUI(Player player, Territory territory, Location beaconLocation) {
+        Inventory gui = Bukkit.createInventory(null, 27, ChatColor.DARK_RED + "Confirm Territory Deletion");
+
+        ItemStack warningItem = new ItemStack(Material.BARRIER);
+        ItemMeta warningMeta = warningItem.getItemMeta();
+        warningMeta.setDisplayName(ChatColor.DARK_RED + "⚠ WARNING ⚠");
+        List<String> warningLore = new ArrayList<>();
+        warningLore.add(ChatColor.RED + "You are about to delete your territory!");
+        warningLore.add(ChatColor.RED + "This action CANNOT be undone!");
+        warningLore.add("");
+        warningLore.add(ChatColor.YELLOW + "Territory: " + ChatColor.WHITE + territory.getRadius() + " blocks radius");
+        warningLore.add(ChatColor.YELLOW + "Level: " + ChatColor.WHITE + territory.getTier());
+        warningMeta.setLore(warningLore);
+        warningItem.setItemMeta(warningMeta);
+
+        ItemStack confirmButton = new ItemStack(Material.RED_WOOL);
+        ItemMeta confirmMeta = confirmButton.getItemMeta();
+        confirmMeta.setDisplayName(ChatColor.DARK_RED + "CONFIRM DELETION");
+        List<String> confirmLore = new ArrayList<>();
+        confirmLore.add(ChatColor.RED + "Click to permanently delete");
+        confirmLore.add(ChatColor.RED + "your territory and beacon!");
+        confirmMeta.setLore(confirmLore);
+        confirmButton.setItemMeta(confirmMeta);
+
+        ItemStack cancelButton = new ItemStack(Material.LIME_WOOL);
+        ItemMeta cancelMeta = cancelButton.getItemMeta();
+        cancelMeta.setDisplayName(ChatColor.GREEN + "CANCEL");
+        List<String> cancelLore = new ArrayList<>();
+        cancelLore.add(ChatColor.GRAY + "Keep your territory");
+        cancelMeta.setLore(cancelLore);
+        cancelButton.setItemMeta(cancelMeta);
+
+        gui.setItem(4, warningItem);
+        gui.setItem(11, confirmButton);
+        gui.setItem(15, cancelButton);
+
+        fillEmpty(gui);
+        player.openInventory(gui);
+        player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BLOCK_BASS, 1.0f, 0.5f);
+    }
+
     private void fillEmpty(Inventory inventory) {
         ItemStack filler = new ItemStack(Material.GRAY_STAINED_GLASS_PANE);
         ItemMeta fillerMeta = filler.getItemMeta();
@@ -191,28 +253,5 @@ public class TerritoryGUI {
                 inventory.setItem(i, filler);
             }
         }
-    }
-
-    private long calculateHoursUntilDecay(Territory territory) {
-        Player owner = Bukkit.getPlayer(territory.getOwnerUUID());
-        if (owner != null && owner.isOnline()) {
-            return 0;
-        }
-
-        long lastSeen = plugin.getPlayerLastSeen(territory.getOwnerUUID());
-        long currentTime = System.currentTimeMillis();
-        long hoursOffline = (currentTime - lastSeen) / (1000 * 60 * 60);
-        long decayStartHours = plugin.getDecayTime();
-
-        if (hoursOffline < decayStartHours) {
-            return decayStartHours - hoursOffline;
-        }
-
-        double remainingInfluence = territory.getInfluence();
-        if (remainingInfluence > 0) {
-            return (long) (remainingInfluence * 10);
-        }
-
-        return 0;
     }
 }

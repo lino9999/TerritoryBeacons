@@ -1,5 +1,5 @@
 name: TerritoryBeacons
-version: '1.0'
+version: '1.2'
 main: com.Lino.territoryBeacons.TerritoryBeacons
 api-version: 1.13
 author: Lino

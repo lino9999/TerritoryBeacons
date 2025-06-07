@@ -41,8 +41,6 @@ public class TerritoryBeacons extends JavaPlugin implements Listener {
     private Connection database;
     private TerritoryGUI territoryGUI;
 
-    private int baseRadius = 16;
-    private int radiusPerTier = 8;
     private int decayTime = 160;
     private int minimumBeaconDistance = 120;
     private int maxTerritoriesPerPlayer = 1;
@@ -134,8 +132,6 @@ public class TerritoryBeacons extends JavaPlugin implements Listener {
 
     public void loadConfigValues() {
         FileConfiguration config = getConfig();
-        baseRadius = config.getInt("base-radius", 16);
-        radiusPerTier = config.getInt("radius-per-tier", 8);
         decayTime = config.getInt("decay-time-hours", 72);
         minimumBeaconDistance = config.getInt("advanced.minimum-beacon-distance", 32);
         maxTerritoriesPerPlayer = config.getInt("advanced.max-territories-per-player", 1);
@@ -143,7 +139,7 @@ public class TerritoryBeacons extends JavaPlugin implements Listener {
         preventExplosions = config.getBoolean("advanced.prevent-explosions", true);
 
         for (int i = 1; i <= 6; i++) {
-            int radius = config.getInt("tiers.tier-" + i + ".radius", baseRadius + (i * radiusPerTier));
+            int radius = config.getInt("tiers.tier-" + i + ".radius", 16 + (i * 8));
             tierRadii.put(i, radius);
 
             if (i > 1) {
@@ -181,8 +177,13 @@ public class TerritoryBeacons extends JavaPlugin implements Listener {
             }
         }
 
+        int tier1Radius = getRadiusForTier(1);
         for (Territory territory : territories.values()) {
-            if (territory.overlaps(loc)) {
+            if (!loc.getWorld().equals(territory.getBeaconLocation().getWorld())) {
+                continue;
+            }
+            double distance = loc.distance(territory.getBeaconLocation());
+            if (distance < (territory.getRadius() + tier1Radius)) {
                 player.sendMessage(ChatColor.RED + "This location is too close to another territory!");
                 event.setCancelled(true);
                 return;
@@ -302,16 +303,7 @@ public class TerritoryBeacons extends JavaPlugin implements Listener {
         if (territory != null) {
             territoryGUI.openTerritoryInfoGUI(player, territory, loc);
         } else {
-            Block block = loc.getBlock();
-            if (block.getState() instanceof Beacon) {
-                Beacon beacon = (Beacon) block.getState();
-
-                if (beacon.getTier() > 0 && beacon.getPrimaryEffect() != null) {
-                    territoryGUI.openCreationGUI(player, loc);
-                } else {
-                    player.sendMessage(ChatColor.RED + "The beacon must be activated with a pyramid and have an active effect!");
-                }
-            }
+            territoryGUI.openCreationGUI(player, loc);
         }
     }
 
@@ -347,6 +339,12 @@ public class TerritoryBeacons extends JavaPlugin implements Listener {
                 if (territory != null && territory.getOwnerUUID().equals(player.getUniqueId())) {
                     territoryGUI.openUpgradeGUI(player, territory, beaconLoc);
                 }
+            } else if (event.getCurrentItem().getType() == Material.TNT) {
+                Location beaconLoc = findNearbyBeacon(player);
+                Territory territory = territories.get(beaconLoc);
+                if (territory != null && territory.getOwnerUUID().equals(player.getUniqueId())) {
+                    territoryGUI.openDeleteConfirmationGUI(player, territory, beaconLoc);
+                }
             } else if (event.getCurrentItem().getType() == Material.BARRIER) {
                 player.closeInventory();
             }
@@ -373,6 +371,45 @@ public class TerritoryBeacons extends JavaPlugin implements Listener {
                     territoryGUI.openTerritoryInfoGUI(player, territory, beaconLoc);
                 }
             }
+        } else if (title.equals(ChatColor.DARK_RED + "Confirm Territory Deletion")) {
+            event.setCancelled(true);
+
+            if (event.getCurrentItem() == null) return;
+
+            if (event.getCurrentItem().getType() == Material.RED_WOOL) {
+                Location beaconLoc = findNearbyBeacon(player);
+                Territory territory = territories.get(beaconLoc);
+                if (territory != null && territory.getOwnerUUID().equals(player.getUniqueId())) {
+                    player.closeInventory();
+                    deleteTerritory(player, territory, beaconLoc);
+                }
+            } else if (event.getCurrentItem().getType() == Material.LIME_WOOL) {
+                Location beaconLoc = findNearbyBeacon(player);
+                Territory territory = territories.get(beaconLoc);
+                if (territory != null) {
+                    territoryGUI.openTerritoryInfoGUI(player, territory, beaconLoc);
+                }
+            }
+        }
+    }
+
+    private void deleteTerritory(Player owner, Territory territory, Location beaconLoc) {
+        removeTerritoryBorder(territory);
+        removeTerritoryFromDatabase(territory);
+        territories.remove(beaconLoc);
+        updatePlayerTerritoryCount(territory.getOwnerUUID());
+
+        if (beaconLoc.getBlock().getType() == Material.BEACON) {
+            beaconLoc.getBlock().setType(Material.AIR);
+            beaconLoc.getWorld().dropItemNaturally(beaconLoc, new ItemStack(Material.BEACON));
+        }
+
+        owner.sendMessage(ChatColor.GREEN + "Your territory has been successfully deleted!");
+
+        Bukkit.broadcastMessage(ChatColor.YELLOW + owner.getName() + " has deleted their territory!");
+
+        for (Player p : Bukkit.getOnlinePlayers()) {
+            p.playSound(p.getLocation(), Sound.ENTITY_WITHER_DEATH, 0.5f, 1.0f);
         }
     }
 
@@ -473,20 +510,7 @@ public class TerritoryBeacons extends JavaPlugin implements Listener {
 
     private void checkAndCreateTerritory(Location loc, Player owner) {
         Block block = loc.getBlock();
-        if (!(block.getState() instanceof Beacon)) return;
-
-        Beacon beacon = (Beacon) block.getState();
-        int tier = beacon.getTier();
-
-        if (tier == 0) {
-            owner.sendMessage(ChatColor.RED + "The beacon must be activated with a pyramid!");
-            return;
-        }
-
-        if (beacon.getPrimaryEffect() == null) {
-            owner.sendMessage(ChatColor.RED + "The beacon must have an active effect! Insert an ingot and select a power.");
-            return;
-        }
+        if (!(block.getType() == Material.BEACON)) return;
 
         if (territories.containsKey(loc)) {
             owner.sendMessage(ChatColor.YELLOW + "This beacon is already a territory!");
@@ -512,6 +536,7 @@ public class TerritoryBeacons extends JavaPlugin implements Listener {
             }
         }
 
+        int tier = 1;
         int totalRadius = getRadiusForTier(tier);
 
         Territory territory = new Territory(owner.getUniqueId(), owner.getName(),
@@ -522,7 +547,7 @@ public class TerritoryBeacons extends JavaPlugin implements Listener {
 
         owner.sendMessage(ChatColor.GREEN + "Territory created successfully!");
         owner.sendMessage(ChatColor.AQUA + "Radius: " + totalRadius + " blocks");
-        owner.sendMessage(ChatColor.AQUA + "Beacon level: " + tier);
+        owner.sendMessage(ChatColor.AQUA + "Level: " + tier);
 
         Bukkit.broadcastMessage(ChatColor.YELLOW + owner.getName() + " has created a new territory!");
 
@@ -1038,20 +1063,12 @@ public class TerritoryBeacons extends JavaPlugin implements Listener {
         return maxTerritoriesPerPlayer;
     }
 
-    public int getBaseRadius() {
-        return baseRadius;
-    }
-
-    public int getRadiusPerTier() {
-        return radiusPerTier;
-    }
-
     public int getDecayTime() {
         return decayTime;
     }
 
     public int getRadiusForTier(int tier) {
-        return tierRadii.getOrDefault(tier, baseRadius + (tier * radiusPerTier));
+        return tierRadii.getOrDefault(tier, 16 + (tier * 8));
     }
 
     public int getUpgradeCost(int fromTier, int toTier) {
