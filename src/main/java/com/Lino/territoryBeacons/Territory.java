@@ -5,6 +5,7 @@ import org.bukkit.entity.Player;
 import java.util.UUID;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.Collections;
 
 public class Territory {
     private final UUID ownerUUID;
@@ -13,8 +14,8 @@ public class Territory {
     private final int radius;
     private final int tier;
     private double influence = 1.0;
-    private Set<UUID> trustedPlayers = new HashSet<>();
-    private Set<Location> borderBlocks = new HashSet<>();
+    private final Set<UUID> trustedPlayers = Collections.synchronizedSet(new HashSet<>());
+    private final Set<Location> borderBlocks = Collections.synchronizedSet(new HashSet<>());
 
     public Territory(UUID ownerUUID, String ownerName, Location beaconLocation, int radius, int tier) {
         this.ownerUUID = ownerUUID;
@@ -71,7 +72,8 @@ public class Territory {
     }
 
     public void addBorderBlock(Location location) {
-        borderBlocks.add(location);
+        // Clone the location to avoid external modifications
+        borderBlocks.add(location.clone());
     }
 
     public void removeBorderBlock(Location location) {
@@ -79,6 +81,7 @@ public class Territory {
     }
 
     public Set<Location> getBorderBlocks() {
+        // Return a defensive copy to prevent external modifications
         return new HashSet<>(borderBlocks);
     }
 
@@ -95,7 +98,8 @@ public class Territory {
     }
 
     public Location getBeaconLocation() {
-        return beaconLocation;
+        // Return a clone to prevent external modifications
+        return beaconLocation.clone();
     }
 
     public int getRadius() {
@@ -111,6 +115,7 @@ public class Territory {
     }
 
     public Set<UUID> getTrustedPlayers() {
+        // Return a defensive copy to prevent external modifications
         return new HashSet<>(trustedPlayers);
     }
 
