@@ -79,7 +79,7 @@ gui-title-management: "<gradient:#00DDFF:#0096FF>Territory Management</gradient>
 gui-title-upgrade: "<gradient:#FFAA00:#FF5500>Upgrade Territory</gradient>"
 gui-title-delete-confirm: "<gradient:#FF5555:#AA0000>Confirm Deletion</gradient>"
 
-# GUI Items & Lore (Simple colors for lore for better readability)
+# GUI Items & Lore
 gui-create-button: "<gradient:#66FF66:#18C818>Create Territory</gradient>"
 gui-create-lore-1: "<#AAAAAA>Click to claim this beacon."
 gui-create-lore-2: "<#00DDFF>Starting Tier: <#FFFFFF>%tier%"
