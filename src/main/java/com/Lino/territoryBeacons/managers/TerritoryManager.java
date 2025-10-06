@@ -48,7 +48,8 @@ public class TerritoryManager {
         territories.put(location, territory);
         plugin.getPlayerManager().updatePlayerTerritoryCount(territory.getOwnerUUID());
         if (plugin.getPl3xMapManager() != null) {
-            plugin.getPl3xMapManager().addTerritoryMarker(territory);
+            // CORREZIONE QUI
+            plugin.getPl3xMapManager().addOrUpdateTerritoryMarker(territory);
         }
     }
 
@@ -172,7 +173,8 @@ public class TerritoryManager {
         createTerritoryBorder(beaconLoc, newTerritory);
 
         if (plugin.getPl3xMapManager() != null) {
-            plugin.getPl3xMapManager().addTerritoryMarker(newTerritory);
+            // CORREZIONE QUI
+            plugin.getPl3xMapManager().addOrUpdateTerritoryMarker(newTerritory);
         }
 
         plugin.getDatabaseManager().updateTerritoryInDatabase(newTerritory);

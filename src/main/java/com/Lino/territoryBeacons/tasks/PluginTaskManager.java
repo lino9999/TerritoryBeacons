@@ -1,6 +1,5 @@
 package com.Lino.territoryBeacons.tasks;
 
-import com.Lino.territoryBeacons.Territory;
 import com.Lino.territoryBeacons.TerritoryBeacons;
 import com.Lino.territoryBeacons.managers.MessageManager;
 import org.bukkit.Bukkit;
@@ -29,6 +28,10 @@ public class PluginTaskManager {
         tasks.add(startDecayTask());
         tasks.add(startSaveTask());
         tasks.add(startTerritoryCheckTask());
+        // NUOVO TASK PER AGGIORNARE LA MAPPA
+        if (plugin.getPl3xMapManager() != null) {
+            tasks.add(startMapUpdateTask());
+        }
     }
 
     public void cancelAllTasks() {
@@ -36,12 +39,22 @@ public class PluginTaskManager {
         tasks.clear();
     }
 
+    private BukkitTask startMapUpdateTask() {
+        return new BukkitRunnable() {
+            @Override
+            public void run() {
+                plugin.getTerritoryManager().getAllTerritories().forEach(
+                        territory -> plugin.getPl3xMapManager().addOrUpdateTerritoryMarker(territory)
+                );
+            }
+        }.runTaskTimerAsynchronously(plugin, 20L * 60, 20L * 60 * 5); // Si avvia dopo 1 minuto, poi ogni 5 minuti
+    }
+
     private BukkitTask startDecayTask() {
         return new BukkitRunnable() {
             @Override
             public void run() {
                 long currentTime = System.currentTimeMillis();
-                long decayTimeMillis = plugin.getConfigManager().getDecayTime() * 3600000L;
 
                 plugin.getTerritoryManager().getAllTerritories().forEach(territory -> {
                     Player owner = Bukkit.getPlayer(territory.getOwnerUUID());
