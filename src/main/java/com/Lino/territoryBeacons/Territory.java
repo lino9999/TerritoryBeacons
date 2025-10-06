@@ -72,7 +72,6 @@ public class Territory {
     }
 
     public void addBorderBlock(Location location) {
-        // Clone the location to avoid external modifications
         borderBlocks.add(location.clone());
     }
 
@@ -81,7 +80,6 @@ public class Territory {
     }
 
     public Set<Location> getBorderBlocks() {
-        // Return a defensive copy to prevent external modifications
         return new HashSet<>(borderBlocks);
     }
 
@@ -98,7 +96,6 @@ public class Territory {
     }
 
     public Location getBeaconLocation() {
-        // Return a clone to prevent external modifications
         return beaconLocation.clone();
     }
 
@@ -115,7 +112,6 @@ public class Territory {
     }
 
     public Set<UUID> getTrustedPlayers() {
-        // Return a defensive copy to prevent external modifications
         return new HashSet<>(trustedPlayers);
     }
 
@@ -127,7 +123,6 @@ public class Territory {
     public boolean equals(Object obj) {
         if (this == obj) return true;
         if (obj == null || getClass() != obj.getClass()) return false;
-
         Territory territory = (Territory) obj;
         return beaconLocation.equals(territory.beaconLocation) &&
                 ownerUUID.equals(territory.ownerUUID);

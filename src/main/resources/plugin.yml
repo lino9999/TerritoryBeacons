@@ -4,6 +4,7 @@ main: com.Lino.territoryBeacons.TerritoryBeacons
 api-version: 1.13
 author: Lino
 description: A territorial claiming system based on powered beacons
+softdepend: [dynmap]
 
 commands:
   territory:
