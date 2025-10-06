@@ -3,7 +3,6 @@ package com.Lino.territoryBeacons.managers;
 import com.Lino.territoryBeacons.Territory;
 import com.Lino.territoryBeacons.TerritoryBeacons;
 import org.bukkit.*;
-import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.scheduler.BukkitRunnable;
@@ -34,6 +33,9 @@ public class TerritoryManager {
         for (Territory territory : territories.values()) {
             removeTerritoryBorder(territory);
             plugin.getDatabaseManager().updateTerritoryInDatabase(territory);
+            if (plugin.getPl3xMapManager() != null) {
+                plugin.getPl3xMapManager().removeTerritoryMarker(territory);
+            }
         }
         activeEffects.values().forEach(BukkitTask::cancel);
         activeEffects.clear();
@@ -43,6 +45,9 @@ public class TerritoryManager {
     public void addTerritory(Location location, Territory territory) {
         territories.put(location, territory);
         plugin.getPlayerManager().updatePlayerTerritoryCount(territory.getOwnerUUID());
+        if (plugin.getPl3xMapManager() != null) {
+            plugin.getPl3xMapManager().addTerritoryMarker(territory);
+        }
     }
 
     public void removeTerritory(Location location) {
@@ -55,6 +60,9 @@ public class TerritoryManager {
             }
             plugin.getDatabaseManager().removeTerritoryFromDatabase(territory);
             plugin.getPlayerManager().updatePlayerTerritoryCount(territory.getOwnerUUID());
+            if (plugin.getPl3xMapManager() != null) {
+                plugin.getPl3xMapManager().removeTerritoryMarker(territory);
+            }
         }
     }
 
@@ -128,7 +136,7 @@ public class TerritoryManager {
 
         owner.sendMessage(ChatColor.GREEN + "Territory created successfully!");
         owner.sendMessage(ChatColor.AQUA + "Radius: " + radius + " blocks");
-        owner.sendMessage(ChatColor.AQUA + "Level: " + tier);
+        owner.sendMessage(ChatColor.AQUA + "Tier: " + tier);
         Bukkit.broadcastMessage(ChatColor.YELLOW + owner.getName() + " has created a new territory!");
         for (Player p : Bukkit.getOnlinePlayers()) {
             p.playSound(p.getLocation(), Sound.UI_TOAST_CHALLENGE_COMPLETE, 0.8f, 1.0f);
@@ -162,6 +170,10 @@ public class TerritoryManager {
         removeTerritoryBorder(territory);
         territories.put(beaconLoc, newTerritory);
         createTerritoryBorder(beaconLoc, newTerritory);
+
+        if (plugin.getPl3xMapManager() != null) {
+            plugin.getPl3xMapManager().addTerritoryMarker(newTerritory);
+        }
 
         plugin.getDatabaseManager().updateTerritoryInDatabase(newTerritory);
 

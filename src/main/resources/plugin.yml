@@ -1,37 +1,37 @@
 name: TerritoryBeacons
-version: '1.3'
+version: '1.4'
 main: com.Lino.territoryBeacons.TerritoryBeacons
-api-version: 1.13
+api-version: '1.21'
 author: Lino
-description: A territorial claiming system based on powered beacons
-softdepend: [dynmap]
+description: A territorial claiming system based on powered beacons.
+softdepend: [Pl3xMap]
 
 commands:
   territory:
-    description: Main command to manage territories
+    description: Main command to manage territories.
     usage: /territory <subcommand>
     aliases: [terr, t]
     permission: territory.use
 
 permissions:
   territory.use:
-    description: Basic permission to use territory commands
+    description: Basic permission to use territory commands.
     default: true
 
   territory.admin:
-    description: Admin permission to bypass protections
+    description: Admin permission to bypass protections.
     default: op
 
   territory.create:
-    description: Allows creating territories
+    description: Allows creating territories.
     default: true
 
   territory.trust:
-    description: Allows adding trusted players
+    description: Allows adding trusted players.
     default: true
 
   territory.*:
-    description: All territory permissions
+    description: All territory permissions.
     default: op
     children:
       territory.use: true

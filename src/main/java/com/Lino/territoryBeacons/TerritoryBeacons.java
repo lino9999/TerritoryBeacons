@@ -7,6 +7,7 @@ import com.Lino.territoryBeacons.managers.ConfigManager;
 import com.Lino.territoryBeacons.managers.DatabaseManager;
 import com.Lino.territoryBeacons.managers.PlayerManager;
 import com.Lino.territoryBeacons.managers.TerritoryManager;
+import com.Lino.territoryBeacons.managers.Pl3xMapManager;
 import com.Lino.territoryBeacons.tasks.PluginTaskManager;
 import org.bukkit.plugin.java.JavaPlugin;
 
@@ -18,6 +19,7 @@ public class TerritoryBeacons extends JavaPlugin {
     private TerritoryManager territoryManager;
     private PluginTaskManager taskManager;
     private TerritoryGUI territoryGUI;
+    private Pl3xMapManager pl3xMapManager;
 
     @Override
     public void onEnable() {
@@ -34,11 +36,15 @@ public class TerritoryBeacons extends JavaPlugin {
         this.taskManager = new PluginTaskManager(this);
         taskManager.startAllTasks();
 
+        if (getServer().getPluginManager().isPluginEnabled("Pl3xMap")) {
+            this.pl3xMapManager = new Pl3xMapManager(this);
+        }
+
         getServer().getPluginManager().registerEvents(new TerritoryListener(this), this);
         getCommand("territory").setExecutor(new TerritoryCommand(this));
         getCommand("territory").setTabCompleter(new TerritoryCommand(this));
 
-        getLogger().info("TerritoryBeacons enabled!");
+        getLogger().info("TerritoryBeacons has been enabled!");
     }
 
     @Override
@@ -46,20 +52,20 @@ public class TerritoryBeacons extends JavaPlugin {
         if (taskManager != null) {
             taskManager.cancelAllTasks();
         }
-
         if (territoryManager != null) {
             territoryManager.saveAndClearTerritories();
         }
-
         if (playerManager != null) {
             playerManager.saveAndClearPlayerData();
         }
-
         if (databaseManager != null) {
             databaseManager.closeConnection();
         }
+        if (pl3xMapManager != null) {
+            pl3xMapManager.disable();
+        }
 
-        getLogger().info("TerritoryBeacons disabled!");
+        getLogger().info("TerritoryBeacons has been disabled!");
     }
 
     public ConfigManager getConfigManager() {
@@ -80,5 +86,9 @@ public class TerritoryBeacons extends JavaPlugin {
 
     public TerritoryGUI getTerritoryGUI() {
         return territoryGUI;
+    }
+
+    public Pl3xMapManager getPl3xMapManager() {
+        return pl3xMapManager;
     }
 }
