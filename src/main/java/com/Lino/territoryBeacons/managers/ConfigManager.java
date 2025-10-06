@@ -24,6 +24,12 @@ public class ConfigManager {
     public void loadConfigValues() {
         plugin.saveDefaultConfig();
         plugin.reloadConfig();
+
+        // Ora questa chiamata è sicura perché MessageManager esiste già.
+        if (plugin.getMessageManager() != null) {
+            plugin.getMessageManager().loadMessages();
+        }
+
         FileConfiguration config = plugin.getConfig();
         decayTime = config.getInt("decay-time-hours", 160);
         minimumBeaconDistance = config.getInt("advanced.minimum-beacon-distance", 260);

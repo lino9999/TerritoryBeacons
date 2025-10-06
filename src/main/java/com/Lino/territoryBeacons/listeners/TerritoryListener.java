@@ -3,9 +3,9 @@ package com.Lino.territoryBeacons.listeners;
 import com.Lino.territoryBeacons.Territory;
 import com.Lino.territoryBeacons.TerritoryBeacons;
 import com.Lino.territoryBeacons.managers.ConfigManager;
+import com.Lino.territoryBeacons.managers.MessageManager;
 import com.Lino.territoryBeacons.managers.PlayerManager;
 import com.Lino.territoryBeacons.managers.TerritoryManager;
-import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
@@ -17,12 +17,10 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.event.entity.EntityExplodeEvent;
+import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
-import org.bukkit.event.inventory.InventoryClickEvent;
-
-import java.util.Iterator;
 
 public class TerritoryListener implements Listener {
 
@@ -30,12 +28,14 @@ public class TerritoryListener implements Listener {
     private final TerritoryManager territoryManager;
     private final PlayerManager playerManager;
     private final ConfigManager configManager;
+    private final MessageManager messageManager;
 
     public TerritoryListener(TerritoryBeacons plugin) {
         this.plugin = plugin;
         this.territoryManager = plugin.getTerritoryManager();
         this.playerManager = plugin.getPlayerManager();
         this.configManager = plugin.getConfigManager();
+        this.messageManager = plugin.getMessageManager();
     }
 
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
@@ -46,24 +46,24 @@ public class TerritoryListener implements Listener {
         Location loc = event.getBlock().getLocation();
 
         if (playerManager.getPlayerTerritoryCount(player.getUniqueId()) >= configManager.getMaxTerritoriesPerPlayer()) {
-            player.sendMessage(ChatColor.RED + "You have reached the maximum number of territories (" + configManager.getMaxTerritoriesPerPlayer() + ")!");
+            player.sendMessage(messageManager.get("max-territories-reached", "%max%", String.valueOf(configManager.getMaxTerritoriesPerPlayer())));
             event.setCancelled(true);
             return;
         }
 
         if (territoryManager.isCloseToBeacon(loc)) {
-            player.sendMessage(ChatColor.RED + "This location is too close to another beacon! Minimum distance: " + configManager.getMinimumBeaconDistance() + " blocks");
+            player.sendMessage(messageManager.get("too-close-to-beacon", "%distance%", String.valueOf(configManager.getMinimumBeaconDistance())));
             event.setCancelled(true);
             return;
         }
 
         int tier1Radius = configManager.getRadiusForTier(1);
         if (territoryManager.isCloseToOtherTerritory(loc, tier1Radius)) {
-            player.sendMessage(ChatColor.RED + "This location is too close to another territory!");
+            player.sendMessage(messageManager.get("too-close-to-territory"));
             event.setCancelled(true);
             return;
         }
-        player.sendMessage(ChatColor.YELLOW + "Beacon placed! Right-click the beacon to create the territory.");
+        player.sendMessage(messageManager.get("beacon-placed-reminder"));
     }
 
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
@@ -74,7 +74,7 @@ public class TerritoryListener implements Listener {
         if (territory != null) {
             Player breaker = event.getPlayer();
             if (!territory.getOwnerUUID().equals(breaker.getUniqueId()) && !breaker.hasPermission("territory.admin")) {
-                breaker.sendMessage(ChatColor.RED + "You cannot destroy this beacon! Only the owner can.");
+                breaker.sendMessage(messageManager.get("cannot-break-beacon"));
                 event.setCancelled(true);
                 return;
             }
@@ -89,12 +89,12 @@ public class TerritoryListener implements Listener {
         Territory territory = territoryManager.getTerritoryAt(event.getBlock().getLocation());
         if (territory != null) {
             if (territory.getBorderBlocks().contains(event.getBlock().getLocation())) {
-                event.getPlayer().sendMessage(ChatColor.RED + "You cannot break territory boundaries!");
+                event.getPlayer().sendMessage(messageManager.get("cannot-break-boundaries"));
                 event.setCancelled(true);
                 return;
             }
             if (!territory.canBuild(event.getPlayer())) {
-                event.getPlayer().sendMessage(ChatColor.RED + "You cannot destroy blocks in " + territory.getOwnerName() + "'s territory!");
+                event.getPlayer().sendMessage(messageManager.get("cannot-destroy-here", "%owner%", territory.getOwnerName()));
                 event.setCancelled(true);
             }
         }
@@ -106,7 +106,7 @@ public class TerritoryListener implements Listener {
 
         Territory territory = territoryManager.getTerritoryAt(event.getBlock().getLocation());
         if (territory != null && !territory.canBuild(event.getPlayer())) {
-            event.getPlayer().sendMessage(ChatColor.RED + "You cannot build in " + territory.getOwnerName() + "'s territory!");
+            event.getPlayer().sendMessage(messageManager.get("cannot-build-here", "%owner%", territory.getOwnerName()));
             event.setCancelled(true);
         }
     }
@@ -125,6 +125,10 @@ public class TerritoryListener implements Listener {
             if (territory != null) {
                 plugin.getTerritoryGUI().openTerritoryInfoGUI(player, territory);
             } else {
+                if (playerManager.getPlayerTerritoryCount(player.getUniqueId()) >= configManager.getMaxTerritoriesPerPlayer()) {
+                    player.sendMessage(messageManager.get("max-territories-reached", "%max%", String.valueOf(configManager.getMaxTerritoriesPerPlayer())));
+                    return;
+                }
                 plugin.getTerritoryGUI().openCreationGUI(player, loc);
             }
             return;
@@ -133,7 +137,7 @@ public class TerritoryListener implements Listener {
         if (configManager.shouldProtectContainers() && block.getState() instanceof Container) {
             Territory territory = territoryManager.getTerritoryAt(block.getLocation());
             if (territory != null && !territory.canBuild(player)) {
-                player.sendMessage(ChatColor.RED + "You cannot access containers in " + territory.getOwnerName() + "'s territory!");
+                player.sendMessage(messageManager.get("cannot-access-containers", "%owner%", territory.getOwnerName()));
                 event.setCancelled(true);
             }
         }
@@ -142,7 +146,7 @@ public class TerritoryListener implements Listener {
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
     public void onEntityExplode(EntityExplodeEvent event) {
         if (!configManager.shouldPreventExplosions()) return;
-        event.blockList().removeIf(block -> territoryManager.getTerritoryAt(block.getLocation()) != null);
+        event.blockList().removeIf(b -> territoryManager.getTerritoryAt(b.getLocation()) != null);
     }
 
     @EventHandler

@@ -2,10 +2,9 @@ package com.Lino.territoryBeacons.commands;
 
 import com.Lino.territoryBeacons.Territory;
 import com.Lino.territoryBeacons.TerritoryBeacons;
-import com.Lino.territoryBeacons.managers.PlayerManager;
+import com.Lino.territoryBeacons.managers.MessageManager;
 import com.Lino.territoryBeacons.managers.TerritoryManager;
 import org.bukkit.Bukkit;
-import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.command.Command;
@@ -24,16 +23,18 @@ public class TerritoryCommand implements CommandExecutor, TabCompleter {
 
     private final TerritoryBeacons plugin;
     private final TerritoryManager territoryManager;
+    private final MessageManager messageManager;
 
     public TerritoryCommand(TerritoryBeacons plugin) {
         this.plugin = plugin;
         this.territoryManager = plugin.getTerritoryManager();
+        this.messageManager = plugin.getMessageManager();
     }
 
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
         if (!(sender instanceof Player)) {
-            sender.sendMessage("This command can only be used by players.");
+            sender.sendMessage(messageManager.get("player-only-command"));
             return true;
         }
 
@@ -50,14 +51,14 @@ public class TerritoryCommand implements CommandExecutor, TabCompleter {
                 break;
             case "trust":
                 if (args.length < 2) {
-                    player.sendMessage(ChatColor.RED + "Usage: /territory trust <player>");
+                    player.sendMessage(messageManager.get("usage-trust"));
                 } else {
                     trustPlayer(player, args[1]);
                 }
                 break;
             case "untrust":
                 if (args.length < 2) {
-                    player.sendMessage(ChatColor.RED + "Usage: /territory untrust <player>");
+                    player.sendMessage(messageManager.get("usage-untrust"));
                 } else {
                     untrustPlayer(player, args[1]);
                 }
@@ -75,141 +76,144 @@ public class TerritoryCommand implements CommandExecutor, TabCompleter {
             case "reload":
                 if (player.hasPermission("territory.admin")) {
                     plugin.getConfigManager().loadConfigValues();
-                    player.sendMessage(ChatColor.GREEN + "Configuration reloaded successfully!");
+                    player.sendMessage(messageManager.get("reload"));
                 } else {
-                    player.sendMessage(ChatColor.RED + "You do not have permission to use this command.");
+                    player.sendMessage(messageManager.get("no-permission"));
                 }
                 break;
             case "help":
                 showHelp(player);
                 break;
             default:
-                player.sendMessage(ChatColor.RED + "Unknown command. Use /territory help for assistance.");
+                player.sendMessage(messageManager.get("unknown-command"));
                 break;
         }
         return true;
     }
 
     private void showHelp(Player player) {
-        player.sendMessage(ChatColor.GREEN + "=== TerritoryBeacons Commands ===");
-        player.sendMessage(ChatColor.AQUA + "/territory info" + ChatColor.WHITE + " - Show information about your current territory.");
-        player.sendMessage(ChatColor.AQUA + "/territory trust <player>" + ChatColor.WHITE + " - Add a player to your territory.");
-        player.sendMessage(ChatColor.AQUA + "/territory untrust <player>" + ChatColor.WHITE + " - Remove a player from your territory.");
-        player.sendMessage(ChatColor.AQUA + "/territory trusted" + ChatColor.WHITE + " - List players trusted in your territory.");
-        player.sendMessage(ChatColor.AQUA + "/territory list [player]" + ChatColor.WHITE + " - List all territories or a specific player's.");
+        player.sendMessage(messageManager.get("help-header"));
+        player.sendMessage(messageManager.get("help-info"));
+        player.sendMessage(messageManager.get("help-trust"));
+        player.sendMessage(messageManager.get("help-untrust"));
+        player.sendMessage(messageManager.get("help-trusted"));
+        player.sendMessage(messageManager.get("help-list"));
         if (player.hasPermission("territory.admin")) {
-            player.sendMessage(ChatColor.AQUA + "/territory reload" + ChatColor.WHITE + " - Reload the plugin's configuration.");
+            player.sendMessage(messageManager.get("help-reload"));
         }
-        player.sendMessage(ChatColor.AQUA + "/territory help" + ChatColor.WHITE + " - Displays this help message.");
+        player.sendMessage(messageManager.get("help-footer"));
     }
 
     private void showTerritoryInfo(Player player) {
         Territory territory = territoryManager.getTerritoryAt(player.getLocation());
         if (territory == null) {
-            player.sendMessage(ChatColor.YELLOW + "You are not inside any territory.");
+            player.sendMessage(messageManager.get("not-in-territory"));
             return;
         }
-        player.sendMessage(ChatColor.GREEN + "=== Territory Information ===");
-        player.sendMessage(ChatColor.AQUA + "Owner: " + ChatColor.WHITE + territory.getOwnerName());
-        player.sendMessage(ChatColor.AQUA + "Radius: " + ChatColor.WHITE + territory.getRadius() + " blocks");
-        player.sendMessage(ChatColor.AQUA + "Tier: " + ChatColor.WHITE + territory.getTier());
-        player.sendMessage(ChatColor.AQUA + "Influence: " + ChatColor.WHITE + String.format("%.1f%%", territory.getInfluence() * 100));
-        if (territory.getOwnerUUID().equals(player.getUniqueId())) {
-            player.sendMessage(ChatColor.GOLD + "This is your territory.");
-        } else if (territory.isTrusted(player.getUniqueId())) {
-            player.sendMessage(ChatColor.GREEN + "You are trusted in this territory.");
-        }
+        player.sendMessage(messageManager.get("gui-info-button"));
+        player.sendMessage(messageManager.get("gui-info-lore-owner", "%owner%", territory.getOwnerName()));
+        player.sendMessage(messageManager.get("gui-info-lore-radius", "%radius%", String.valueOf(territory.getRadius())));
+        player.sendMessage(messageManager.get("gui-info-lore-tier", "%tier%", String.valueOf(territory.getTier())));
+        player.sendMessage(messageManager.get("gui-info-lore-influence", "%influence%", String.format("%.1f", territory.getInfluence() * 100)));
     }
 
     private void trustPlayer(Player player, String targetName) {
         Territory territory = territoryManager.getTerritoryByOwner(player.getUniqueId());
         if (territory == null) {
-            player.sendMessage(ChatColor.RED + "You do not own a territory.");
+            player.sendMessage(messageManager.get("not-owner-of-territory"));
             return;
         }
         Player target = Bukkit.getPlayer(targetName);
         if (target == null) {
-            player.sendMessage(ChatColor.RED + "Player not found.");
+            player.sendMessage(messageManager.get("player-not-found"));
             return;
         }
         if (target.getUniqueId().equals(player.getUniqueId())) {
-            player.sendMessage(ChatColor.RED + "You cannot trust yourself.");
+            player.sendMessage(messageManager.get("you-cannot-trust-yourself"));
             return;
         }
         if (territory.isTrusted(target.getUniqueId())) {
-            player.sendMessage(ChatColor.YELLOW + target.getName() + " is already trusted.");
+            player.sendMessage(messageManager.get("player-already-trusted", "%trusted_player%", target.getName()));
             return;
         }
         territory.addTrustedPlayer(target.getUniqueId());
-        player.sendMessage(ChatColor.GREEN + target.getName() + " has been added to your territory.");
-        target.sendMessage(ChatColor.GREEN + "You are now trusted in " + player.getName() + "'s territory.");
+        player.sendMessage(messageManager.get("player-trusted", "%trusted_player%", target.getName()));
+        target.sendMessage(messageManager.get("player-is-now-trusted", "%owner%", player.getName()));
     }
 
     private void untrustPlayer(Player player, String targetName) {
         Territory territory = territoryManager.getTerritoryByOwner(player.getUniqueId());
         if (territory == null) {
-            player.sendMessage(ChatColor.RED + "You do not own a territory.");
+            player.sendMessage(messageManager.get("not-owner-of-territory"));
             return;
         }
-        OfflinePlayer target = Bukkit.getOfflinePlayer(targetName);
+        OfflinePlayer target = Arrays.stream(Bukkit.getOfflinePlayers()).filter(p -> p.getName().equalsIgnoreCase(targetName)).findFirst().orElse(null);
+        if (target == null) {
+            player.sendMessage(messageManager.get("player-not-found"));
+            return;
+        }
         if (!territory.isTrusted(target.getUniqueId())) {
-            player.sendMessage(ChatColor.YELLOW + target.getName() + " is not trusted in your territory.");
+            player.sendMessage(messageManager.get("player-not-trusted", "%trusted_player%", target.getName()));
             return;
         }
         territory.removeTrustedPlayer(target.getUniqueId());
-        player.sendMessage(ChatColor.GREEN + target.getName() + " has been removed from your territory.");
+        player.sendMessage(messageManager.get("player-untrusted", "%trusted_player%", target.getName()));
         if (target.isOnline()) {
-            ((Player) target).sendMessage(ChatColor.YELLOW + "You are no longer trusted in " + player.getName() + "'s territory.");
+            target.getPlayer().sendMessage(messageManager.get("player-is-no-longer-trusted", "%owner%", player.getName()));
         }
     }
 
     private void showTrustedPlayers(Player player) {
         Territory territory = territoryManager.getTerritoryByOwner(player.getUniqueId());
         if (territory == null) {
-            player.sendMessage(ChatColor.RED + "You do not own a territory.");
+            player.sendMessage(messageManager.get("not-owner-of-territory"));
             return;
         }
         Set<UUID> trusted = territory.getTrustedPlayers();
         if (trusted.isEmpty()) {
-            player.sendMessage(ChatColor.YELLOW + "You have not trusted any players.");
+            player.sendMessage(messageManager.get("no-trusted-players"));
             return;
         }
-        player.sendMessage(ChatColor.GREEN + "=== Trusted Players ===");
+        player.sendMessage(messageManager.get("gui-trusted-button"));
         for (UUID uuid : trusted) {
             OfflinePlayer trustedPlayer = Bukkit.getOfflinePlayer(uuid);
-            String status = trustedPlayer.isOnline() ? ChatColor.GREEN + " (Online)" : ChatColor.GRAY + " (Offline)";
-            player.sendMessage(ChatColor.AQUA + "- " + trustedPlayer.getName() + status);
+            String status = trustedPlayer.isOnline() ? " (Online)" : " (Offline)";
+            player.sendMessage("- " + trustedPlayer.getName() + status);
         }
     }
 
     private void listAllTerritories(Player player) {
         if (territoryManager.getAllTerritories().isEmpty()) {
-            player.sendMessage(ChatColor.YELLOW + "There are no active territories on this server.");
+            player.sendMessage(messageManager.get("no-active-territories"));
             return;
         }
-        player.sendMessage(ChatColor.GREEN + "=== Active Territories ===");
+        player.sendMessage(messageManager.get("main", "Active Territories"));
         for (Territory territory : territoryManager.getAllTerritories()) {
             Location loc = territory.getBeaconLocation();
             String coords = String.format("(%d, %d, %d)", loc.getBlockX(), loc.getBlockY(), loc.getBlockZ());
             String influence = String.format("%.0f%%", territory.getInfluence() * 100);
-            player.sendMessage(ChatColor.AQUA + territory.getOwnerName() + ChatColor.WHITE + " - " + coords + " - Influence: " + influence);
+            player.sendMessage(territory.getOwnerName() + " - " + coords + " - Influence: " + influence);
         }
     }
 
     private void listPlayerTerritories(Player player, String targetName) {
-        OfflinePlayer target = Bukkit.getOfflinePlayer(targetName);
+        OfflinePlayer target = Arrays.stream(Bukkit.getOfflinePlayers()).filter(p -> p.getName().equalsIgnoreCase(targetName)).findFirst().orElse(null);
+        if (target == null) {
+            player.sendMessage(messageManager.get("player-not-found"));
+            return;
+        }
         Territory territory = territoryManager.getTerritoryByOwner(target.getUniqueId());
         if (territory == null) {
-            player.sendMessage(ChatColor.YELLOW + target.getName() + " does not own a territory.");
+            player.sendMessage(messageManager.get("target-has-no-territory", "%player%", target.getName()));
             return;
         }
         Location loc = territory.getBeaconLocation();
         String coords = String.format("(%d, %d, %d)", loc.getBlockX(), loc.getBlockY(), loc.getBlockZ());
-        player.sendMessage(ChatColor.GREEN + "=== " + target.getName() + "'s Territory ===");
-        player.sendMessage(ChatColor.AQUA + "Location: " + ChatColor.WHITE + coords);
-        player.sendMessage(ChatColor.AQUA + "Radius: " + ChatColor.WHITE + territory.getRadius() + " blocks");
-        player.sendMessage(ChatColor.AQUA + "Tier: " + ChatColor.WHITE + territory.getTier());
-        player.sendMessage(ChatColor.AQUA + "Influence: " + ChatColor.WHITE + String.format("%.1f%%", territory.getInfluence() * 100));
+        player.sendMessage(target.getName() + "'s Territory");
+        player.sendMessage("Location: " + coords);
+        player.sendMessage(messageManager.get("gui-info-lore-radius", "%radius%", String.valueOf(territory.getRadius())));
+        player.sendMessage(messageManager.get("gui-info-lore-tier", "%tier%", String.valueOf(territory.getTier())));
+        player.sendMessage(messageManager.get("gui-info-lore-influence", "%influence%", String.format("%.1f", territory.getInfluence() * 100)));
     }
 
     @Override

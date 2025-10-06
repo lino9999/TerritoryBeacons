@@ -17,11 +17,13 @@ import java.util.concurrent.ConcurrentHashMap;
 public class TerritoryManager {
 
     private final TerritoryBeacons plugin;
+    private final MessageManager messageManager;
     private final Map<Location, Territory> territories = new ConcurrentHashMap<>();
     private final Map<Location, BukkitTask> activeEffects = new ConcurrentHashMap<>();
 
     public TerritoryManager(TerritoryBeacons plugin) {
         this.plugin = plugin;
+        this.messageManager = plugin.getMessageManager();
     }
 
     public void loadTerritories() {
@@ -134,10 +136,8 @@ public class TerritoryManager {
         createTerritoryBorder(loc, territory);
         spawnCreationEffect(loc);
 
-        owner.sendMessage(ChatColor.GREEN + "Territory created successfully!");
-        owner.sendMessage(ChatColor.AQUA + "Radius: " + radius + " blocks");
-        owner.sendMessage(ChatColor.AQUA + "Tier: " + tier);
-        Bukkit.broadcastMessage(ChatColor.YELLOW + owner.getName() + " has created a new territory!");
+        owner.sendMessage(messageManager.get("territory-created"));
+        Bukkit.broadcastMessage(messageManager.get("broadcast-territory-created", "%owner%", owner.getName()));
         for (Player p : Bukkit.getOnlinePlayers()) {
             p.playSound(p.getLocation(), Sound.UI_TOAST_CHALLENGE_COMPLETE, 0.8f, 1.0f);
         }
@@ -151,8 +151,8 @@ public class TerritoryManager {
             beaconLoc.getWorld().dropItemNaturally(beaconLoc, new ItemStack(Material.BEACON));
         }
 
-        owner.sendMessage(ChatColor.GREEN + "Your territory has been successfully deleted!");
-        Bukkit.broadcastMessage(ChatColor.YELLOW + owner.getName() + " has deleted their territory!");
+        owner.sendMessage(messageManager.get("territory-deleted"));
+        Bukkit.broadcastMessage(messageManager.get("broadcast-territory-deleted", "%owner%", owner.getName()));
 
         for (Player p : Bukkit.getOnlinePlayers()) {
             p.playSound(p.getLocation(), Sound.ENTITY_WITHER_DEATH, 0.5f, 1.0f);
@@ -177,8 +177,8 @@ public class TerritoryManager {
 
         plugin.getDatabaseManager().updateTerritoryInDatabase(newTerritory);
 
-        player.sendMessage(ChatColor.GREEN + "Territory upgraded to tier " + targetTier + "!");
-        player.sendMessage(ChatColor.AQUA + "New radius: " + newRadius + " blocks");
+        player.sendMessage(messageManager.get("territory-upgraded", "%tier%", String.valueOf(targetTier)));
+        player.sendMessage(messageManager.get("new-radius-is", "%radius%", String.valueOf(newRadius)));
         player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1.0f, 1.0f);
     }
 
@@ -192,10 +192,10 @@ public class TerritoryManager {
             double rad = Math.toRadians(angle);
             double x = center.getX() + radius * Math.cos(rad);
             double z = center.getZ() + radius * Math.sin(rad);
-            Location borderLoc = new Location(world, x, world.getMaxHeight() - 1, z);
-            Location placeLoc = world.getHighestBlockAt(borderLoc).getLocation().add(0, 1, 0);
+            Location borderLoc = new Location(world, x, world.getHighestBlockYAt((int)x, (int)z), z);
+            Location placeLoc = borderLoc.add(0, 1, 0);
 
-            if (placeLoc.getBlock().getType() == Material.AIR && isOnBorder(placeLoc, center, radius)) {
+            if (placeLoc.getBlock().getType().isAir() && isOnBorder(placeLoc, center, radius)) {
                 if (placeLoc.getBlock().getRelative(0, -1, 0).getType().isSolid()) {
                     placeLoc.getBlock().setType(Material.TORCH);
                     territory.addBorderBlock(placeLoc);
@@ -205,12 +205,11 @@ public class TerritoryManager {
     }
 
     public void removeTerritoryBorder(Territory territory) {
-        Set<Location> borderBlocksCopy = new HashSet<>(territory.getBorderBlocks());
-        for (Location loc : borderBlocksCopy) {
+        new HashSet<>(territory.getBorderBlocks()).forEach(loc -> {
             if (loc.getBlock().getType() == Material.TORCH) {
                 loc.getBlock().setType(Material.AIR);
             }
-        }
+        });
         territory.clearBorderBlocks();
     }
 

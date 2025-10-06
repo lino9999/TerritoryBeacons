@@ -1,0 +1,118 @@
+# =======================================================
+# MESSAGES.YML FOR TERRITORYBEACONS
+#
+# Gradient format: <gradient:#RRGGBB:#RRGGBB>Message</gradient>
+# Normal color format: <#RRGGBB>Message
+#
+# Placeholders: %player%, %owner%, %radius%, %tier%,
+# %cost%, %max%, %distance%, %trusted_player%, %time%
+# =======================================================
+
+# General Messages
+prefix: "<gradient:#00DDFF:#0096FF>TerritoryBeacons</gradient>"
+reload: "<gradient:#66FF66:#18C818>Configuration and messages reloaded successfully!</gradient>"
+unknown-command: "<gradient:#FF5555:#AA0000>Unknown command. Use /territory help for assistance.</gradient>"
+no-permission: "<gradient:#FF5555:#AA0000>You do not have permission to use this command.</gradient>"
+player-only-command: "<gradient:#FF5555:#AA0000>This command can only be used by players.</gradient>"
+player-not-found: "<gradient:#FF5555:#AA0000>Player not found.</gradient>"
+
+# Territory Actions
+territory-created: "<gradient:#66FF66:#18C818>Territory created successfully!</gradient>"
+broadcast-territory-created: "<#FFAA00>%owner% has created a new territory!</#FFAA00>"
+territory-deleted: "<gradient:#66FF66:#18C818>Your territory has been successfully deleted!</gradient>"
+broadcast-territory-deleted: "<#FFAA00>%owner% has deleted their territory.</#FFAA00>"
+beacon-placed-reminder: "<gradient:#FFFF55:#FFAA00>Beacon placed! Right-click it to create the territory.</gradient>"
+territory-upgraded: "<gradient:#66FF66:#18C818>Territory upgraded to tier %tier%!</gradient>"
+new-radius-is: "<gradient:#00DDFF:#0096FF>New radius: %radius% blocks.</gradient>"
+
+# Trust System
+you-cannot-trust-yourself: "<gradient:#FF5555:#AA0000>You cannot trust yourself.</gradient>"
+player-trusted: "<gradient:#66FF66:#18C818>%trusted_player% has been added to your territory.</gradient>"
+player-is-now-trusted: "<gradient:#66FF66:#18C818>You are now trusted in %owner%'s territory.</gradient>"
+player-already-trusted: "<gradient:#FFFF55:#FFAA00>%trusted_player% is already trusted.</gradient>"
+player-untrusted: "<gradient:#66FF66:#18C818>%trusted_player% has been removed from your territory.</gradient>"
+player-is-no-longer-trusted: "<gradient:#FFFF55:#FFAA00>You are no longer trusted in %owner%'s territory.</gradient>"
+player-not-trusted: "<gradient:#FFFF55:#FFAA00>%trusted_player% is not trusted in your territory.</gradient>"
+
+# Error Messages
+max-territories-reached: "<gradient:#FF5555:#AA0000>You have reached the maximum number of territories (%max%)!</gradient>"
+too-close-to-beacon: "<gradient:#FF5555:#AA0000>This location is too close to another beacon! Minimum distance: %distance% blocks.</gradient>"
+too-close-to-territory: "<gradient:#FF5555:#AA0000>This location is too close to another territory!</gradient>"
+cannot-break-beacon: "<gradient:#FF5555:#AA0000>You cannot destroy this beacon! Only the owner can.</gradient>"
+cannot-break-boundaries: "<gradient:#FF5555:#AA0000>You cannot break territory boundaries!</gradient>"
+cannot-build-here: "<gradient:#FF5555:#AA0000>You cannot build in %owner%'s territory!</gradient>"
+cannot-destroy-here: "<gradient:#FF5555:#AA0000>You cannot destroy blocks in %owner%'s territory!</gradient>"
+cannot-access-containers: "<gradient:#FF5555:#AA0000>You cannot access containers in %owner%'s territory!</gradient>"
+not-in-territory: "<gradient:#FFFF55:#FFAA00>You are not inside any territory.</gradient>"
+not-owner-of-territory: "<gradient:#FF5555:#AA0000>You do not own a territory.</gradient>"
+target-has-no-territory: "<gradient:#FFFF55:#FFAA00>%player% does not own a territory.</gradient>"
+no-trusted-players: "<gradient:#FFFF55:#FFAA00>You have not trusted any players.</gradient>"
+no-active-territories: "<gradient:#FFFF55:#FFAA00>There are no active territories on this server.</gradient>"
+need-more-diamonds: "<gradient:#FF5555:#AA0000>You need %cost% diamonds to upgrade.</gradient>"
+beacon-action-failed: "<gradient:#FF5555:#AA0000>Could not find the beacon associated with this action.</gradient>"
+territory-decay-message: "<gradient:#FF5555:#AA0000>The territory of %owner% has decayed due to inactivity!</gradient>"
+
+# Player Movement Titles
+title-enter-own-territory: "<gradient:#66FF66:#18C818>Your Territory</gradient>"
+subtitle-enter-own-territory: "<#AAAAAA>You are safe here"
+title-enter-other-territory: "<gradient:#00DDFF:#0096FF>Territory of</gradient>"
+subtitle-enter-other-territory-trusted: "<#66FF66>%owner% (Trusted)"
+subtitle-enter-other-territory-untrusted: "<#FFFF55>%owner%"
+title-wilderness: "<#AAAAAA>Wilderness"
+subtitle-wilderness: "<#777777>You have left the protected area"
+
+# Command Usage & Help
+usage-trust: "<#AAAAAA>Usage: /territory trust <player>"
+usage-untrust: "<#AAAAAA>Usage: /territory untrust <player>"
+help-header: "<gradient:#00DDFF:#0096FF>TerritoryBeacons Commands</gradient>"
+help-info: "<#00DDFF>/t info <#777777>- Show territory info."
+help-trust: "<#00DDFF>/t trust <player> <#777777>- Add a player."
+help-untrust: "<#00DDFF>/t untrust <player> <#777777>- Remove a player."
+help-trusted: "<#00DDFF>/t trusted <#777777>- List trusted players."
+help-list: "<#00DDFF>/t list [player] <#777777>- List territories."
+help-reload: "<#00DDFF>/t reload <#777777>- Reload configuration."
+help-footer: "<#00DDFF>/t help <#777777>- Displays this help message."
+
+# GUI Titles
+gui-title-create: "<gradient:#00DDFF:#0096FF>Create Territory</gradient>"
+gui-title-management: "<gradient:#00DDFF:#0096FF>Territory Management</gradient>"
+gui-title-upgrade: "<gradient:#FFAA00:#FF5500>Upgrade Territory</gradient>"
+gui-title-delete-confirm: "<gradient:#FF5555:#AA0000>Confirm Deletion</gradient>"
+
+# GUI Items & Lore (Simple colors for lore for better readability)
+gui-create-button: "<gradient:#66FF66:#18C818>Create Territory</gradient>"
+gui-create-lore-1: "<#AAAAAA>Click to claim this beacon."
+gui-create-lore-2: "<#00DDFF>Starting Tier: <#FFFFFF>%tier%"
+gui-create-lore-3: "<#00DDFF>Starting Radius: <#FFFFFF>%radius% blocks"
+gui-create-lore-4: "<#FFFF55>Territories Owned: <#FFFFFF>%count%/%max%"
+
+gui-info-button: "<gradient:#FFFF55:#FFAA00>Territory Information</gradient>"
+gui-info-lore-owner: "<#00DDFF>Owner: <#FFFFFF>%owner%"
+gui-info-lore-radius: "<#00DDFF>Radius: <#FFFFFF>%radius% blocks"
+gui-info-lore-tier: "<#00DDFF>Tier: <#FFFFFF>%tier%"
+gui-info-lore-influence: "<#00DDFF>Influence: <#FFFFFF>%influence%%"
+gui-info-lore-active: "<#66FF66>Territory is active (Owner online)"
+gui-info-lore-decay-starts: "<#FFFF55>Decay starts in: <#FFFFFF>%time%"
+gui-info-lore-decaying: "<#FF5555>Territory is decaying due to inactivity."
+
+gui-upgrade-button: "<gradient:#00DDFF:#0096FF>Upgrade Territory</gradient>"
+gui-upgrade-lore: "<#AAAAAA>Click to upgrade your territory."
+gui-delete-button: "<gradient:#FF5555:#AA0000>Delete Territory</gradient>"
+gui-delete-lore-1: "<#FF5555>WARNING: This is permanent!"
+gui-delete-lore-2: "<#AAAAAA>Click to destroy your territory."
+
+gui-trusted-button: "<gradient:#66FF66:#18C818>Trusted Players</gradient>"
+gui-trusted-lore-count: "<#AAAAAA>Players: %count%"
+gui-trusted-lore-command: "<#FFFF55>Use /territory trust <player>"
+
+gui-tier-owned: "<#66FF66>Tier %tier% (Owned)"
+gui-tier-available: "<#FFFF55>Tier %tier% (Available)"
+gui-tier-locked: "<#FF5555>Tier %tier% (Locked)"
+gui-tier-cost: "<#FFAA00>Cost: <#FFFFFF>%cost% diamonds"
+
+gui-delete-confirm-warning: "<#FF5555>⚠ WARNING ⚠"
+gui-delete-confirm-lore: "<#FF5555>This action CANNOT be undone!"
+gui-delete-confirm-button: "<#AA0000>CONFIRM DELETION"
+gui-cancel-button: "<#66FF66>CANCEL"
+gui-back-button: "<#AAAAAA>Back"
+gui-close-button: "<#FF5555>Close"

@@ -3,11 +3,7 @@ package com.Lino.territoryBeacons;
 import com.Lino.territoryBeacons.commands.TerritoryCommand;
 import com.Lino.territoryBeacons.gui.TerritoryGUI;
 import com.Lino.territoryBeacons.listeners.TerritoryListener;
-import com.Lino.territoryBeacons.managers.ConfigManager;
-import com.Lino.territoryBeacons.managers.DatabaseManager;
-import com.Lino.territoryBeacons.managers.PlayerManager;
-import com.Lino.territoryBeacons.managers.TerritoryManager;
-import com.Lino.territoryBeacons.managers.Pl3xMapManager;
+import com.Lino.territoryBeacons.managers.*;
 import com.Lino.territoryBeacons.tasks.PluginTaskManager;
 import org.bukkit.plugin.java.JavaPlugin;
 
@@ -20,10 +16,14 @@ public class TerritoryBeacons extends JavaPlugin {
     private PluginTaskManager taskManager;
     private TerritoryGUI territoryGUI;
     private Pl3xMapManager pl3xMapManager;
+    private MessageManager messageManager;
 
     @Override
     public void onEnable() {
+        // CORREZIONE: Inizializza prima MessageManager, poi ConfigManager.
+        this.messageManager = new MessageManager(this);
         this.configManager = new ConfigManager(this);
+
         this.databaseManager = new DatabaseManager(this);
         this.playerManager = new PlayerManager(this);
         this.territoryManager = new TerritoryManager(this);
@@ -70,6 +70,10 @@ public class TerritoryBeacons extends JavaPlugin {
 
     public ConfigManager getConfigManager() {
         return configManager;
+    }
+
+    public MessageManager getMessageManager() {
+        return messageManager;
     }
 
     public DatabaseManager getDatabaseManager() {

@@ -2,8 +2,8 @@ package com.Lino.territoryBeacons.tasks;
 
 import com.Lino.territoryBeacons.Territory;
 import com.Lino.territoryBeacons.TerritoryBeacons;
+import com.Lino.territoryBeacons.managers.MessageManager;
 import org.bukkit.Bukkit;
-import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.Sound;
@@ -17,10 +17,12 @@ import java.util.List;
 public class PluginTaskManager {
 
     private final TerritoryBeacons plugin;
+    private final MessageManager messageManager;
     private final List<BukkitTask> tasks = new ArrayList<>();
 
     public PluginTaskManager(TerritoryBeacons plugin) {
         this.plugin = plugin;
+        this.messageManager = plugin.getMessageManager();
     }
 
     public void startAllTasks() {
@@ -59,7 +61,7 @@ public class PluginTaskManager {
                                         beaconLoc.getBlock().setType(Material.AIR);
                                         beaconLoc.getWorld().dropItemNaturally(beaconLoc, new ItemStack(Material.BEACON));
                                     }
-                                    Bukkit.broadcastMessage(ChatColor.RED + "The territory of " + territory.getOwnerName() + " has decayed due to inactivity!");
+                                    Bukkit.broadcastMessage(messageManager.get("territory-decay-message", "%owner%", territory.getOwnerName()));
                                     Bukkit.getOnlinePlayers().forEach(p -> p.playSound(p.getLocation(), Sound.ENTITY_WITHER_DEATH, 0.5f, 0.8f));
                                 });
                             }
@@ -78,8 +80,6 @@ public class PluginTaskManager {
             public void run() {
                 plugin.getTerritoryManager().getAllTerritories().forEach(t -> plugin.getDatabaseManager().updateTerritoryInDatabase(t));
                 plugin.getPlayerManager().saveAndClearPlayerData();
-                plugin.getPlayerManager().loadPlayerData();
-                plugin.getPlayerManager().cleanupUnusedData();
             }
         }.runTaskTimerAsynchronously(plugin, 20 * 60 * 5, 20 * 60 * 5);
     }
@@ -88,7 +88,9 @@ public class PluginTaskManager {
         return new BukkitRunnable() {
             @Override
             public void run() {
-                Bukkit.getOnlinePlayers().forEach(plugin.getPlayerManager()::checkPlayerTerritory);
+                for (Player player : Bukkit.getOnlinePlayers()) {
+                    plugin.getPlayerManager().checkPlayerTerritory(player);
+                }
             }
         }.runTaskTimer(plugin, 0, 20);
     }
