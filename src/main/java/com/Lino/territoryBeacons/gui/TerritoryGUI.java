@@ -137,14 +137,23 @@ public class TerritoryGUI {
 
     public void handleInventoryClick(InventoryClickEvent event) {
         if (!(event.getWhoClicked() instanceof Player)) return;
-        Player player = (Player) event.getWhoClicked();
+
         String title = event.getView().getTitle();
+        if (!title.equals(messageManager.get("gui-title-create")) &&
+                !title.equals(messageManager.get("gui-title-management")) &&
+                !title.equals(messageManager.get("gui-title-upgrade")) &&
+                !title.equals(messageManager.get("gui-title-delete-confirm"))) {
+            return;
+        }
+
+        event.setCancelled(true);
+
+        Player player = (Player) event.getWhoClicked();
         ItemStack clickedItem = event.getCurrentItem();
 
         if (clickedItem == null || clickedItem.getType().isAir() || clickedItem.getType() == Material.GRAY_STAINED_GLASS_PANE)
             return;
 
-        event.setCancelled(true);
         Location beaconLoc = findNearbyBeacon(player);
         if (beaconLoc == null) {
             player.closeInventory();
