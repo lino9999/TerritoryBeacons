@@ -13,6 +13,7 @@ public class TerritoryBeacons extends JavaPlugin {
     private DatabaseManager databaseManager;
     private PlayerManager playerManager;
     private TerritoryManager territoryManager;
+    private EconomyManager economyManager;
     private PluginTaskManager taskManager;
     private TerritoryGUI territoryGUI;
     private Pl3xMapManager pl3xMapManager;
@@ -20,13 +21,12 @@ public class TerritoryBeacons extends JavaPlugin {
 
     @Override
     public void onEnable() {
-        // CORREZIONE: Inizializza prima MessageManager, poi ConfigManager.
         this.messageManager = new MessageManager(this);
         this.configManager = new ConfigManager(this);
-
         this.databaseManager = new DatabaseManager(this);
         this.playerManager = new PlayerManager(this);
         this.territoryManager = new TerritoryManager(this);
+        this.economyManager = new EconomyManager(this);
         this.territoryGUI = new TerritoryGUI(this);
 
         databaseManager.initDatabase();
@@ -86,6 +86,10 @@ public class TerritoryBeacons extends JavaPlugin {
 
     public TerritoryManager getTerritoryManager() {
         return territoryManager;
+    }
+
+    public EconomyManager getEconomyManager() {
+        return economyManager;
     }
 
     public TerritoryGUI getTerritoryGUI() {

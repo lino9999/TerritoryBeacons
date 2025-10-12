@@ -1,10 +1,10 @@
 name: TerritoryBeacons
-version: '1.7'
+version: '1.8'
 main: com.Lino.territoryBeacons.TerritoryBeacons
 api-version: '1.21'
 author: Lino
 description: A territorial claiming system based on powered beacons.
-softdepend: [Pl3xMap]
+softdepend: [Pl3xMap, Vault]
 
 commands:
   territory:
@@ -30,6 +30,10 @@ permissions:
     description: Allows adding trusted players.
     default: true
 
+  territory.setname:
+    description: Allows setting a name for the territory.
+    default: true
+
   territory.*:
     description: All territory permissions.
     default: op
@@ -38,3 +42,4 @@ permissions:
       territory.admin: true
       territory.create: true
       territory.trust: true
+      territory.setname: true

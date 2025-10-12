@@ -15,6 +15,7 @@ import net.pl3x.map.core.util.Colors;
 import net.pl3x.map.core.world.World;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
+
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
 import java.net.URL;
@@ -74,28 +75,26 @@ public class Pl3xMapManager implements EventListener {
             SimpleLayer layer = (SimpleLayer) world.getLayerRegistry().get(LAYER_KEY);
             if (layer == null) return;
 
-            // Remove old markers to update them
             String circleKey = "territory_circle_" + territory.getOwnerUUID();
             String iconKey = "territory_icon_" + territory.getOwnerUUID();
             layer.removeMarker(circleKey);
             layer.removeMarker(iconKey);
 
-            // --- Build Detailed Tooltip ---
             StringBuilder tooltip = new StringBuilder();
-            tooltip.append("<strong>").append(territory.getOwnerName()).append("'s Territory</strong><br/>");
+            tooltip.append("<strong>").append(territory.getTerritoryName()).append("</strong><br/>");
+            tooltip.append("Owner: ").append(territory.getOwnerName()).append("<br/>");
             tooltip.append("Tier: ").append(territory.getTier()).append("<br/>");
             tooltip.append("Radius: ").append(territory.getRadius()).append(" blocks<br/>");
             tooltip.append("Trusted: ").append(territory.getTrustedPlayers().size()).append(" players<br/>");
             tooltip.append("Influence: ").append(String.format("%.1f%%", territory.getInfluence() * 100));
 
-            // --- Determine Status and Color ---
             int strokeColor;
             int fillColor;
 
             Player owner = Bukkit.getPlayer(territory.getOwnerUUID());
             if (owner != null && owner.isOnline()) {
                 tooltip.append("<br/><span style='color: #66FF66;'>Status: Active (Owner Online)</span>");
-                strokeColor = Colors.fromHex("#00FFFF"); // Cyan
+                strokeColor = Colors.fromHex("#00FFFF");
                 fillColor = Colors.fromHex("#3300FFFF");
             } else {
                 long decayStartMillis = TimeUnit.HOURS.toMillis(plugin.getConfigManager().getDecayTime());
@@ -105,16 +104,15 @@ public class Pl3xMapManager implements EventListener {
                     long hours = TimeUnit.MILLISECONDS.toHours(remainingMillis);
                     long minutes = TimeUnit.MILLISECONDS.toMinutes(remainingMillis) % 60;
                     tooltip.append("<br/><span style='color: #FFFF55;'>Status: Decay in ").append(hours).append("h ").append(minutes).append("m</span>");
-                    strokeColor = Colors.fromHex("#FFFF55"); // Yellow
+                    strokeColor = Colors.fromHex("#FFFF55");
                     fillColor = Colors.fromHex("#33FFFF55");
                 } else {
                     tooltip.append("<br/><span style='color: #FF5555;'>Status: Decaying!</span>");
-                    strokeColor = Colors.fromHex("#FF5555"); // Red
+                    strokeColor = Colors.fromHex("#FF5555");
                     fillColor = Colors.fromHex("#33FF5555");
                 }
             }
 
-            // --- Create Circle Marker ---
             Options.Builder optionsBuilder = new Options.Builder()
                     .stroke(true)
                     .strokeColor(strokeColor)
@@ -135,7 +133,6 @@ public class Pl3xMapManager implements EventListener {
                     BufferedImage image = ImageIO.read(new URL(headUrl));
                     Pl3xMap.api().getIconRegistry().register(new IconImage(headIconKey, image, "png"));
                 } catch (Exception e) {
-                    // Could not fetch player head, do nothing
                 }
             }
 
@@ -168,6 +165,5 @@ public class Pl3xMapManager implements EventListener {
                 }
             }
         }
-
     }
 }

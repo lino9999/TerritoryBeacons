@@ -5,6 +5,7 @@ import com.Lino.territoryBeacons.TerritoryBeacons;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.World;
+
 import java.io.File;
 import java.sql.*;
 import java.util.Map;
@@ -33,7 +34,7 @@ public class DatabaseManager {
             try (Statement stmt = database.createStatement()) {
                 stmt.execute("CREATE TABLE IF NOT EXISTS territories (" +
                         "id INTEGER PRIMARY KEY AUTOINCREMENT, owner_uuid TEXT NOT NULL, owner_name TEXT NOT NULL, " +
-                        "world TEXT NOT NULL, x INTEGER NOT NULL, y INTEGER NOT NULL, z INTEGER NOT NULL, " +
+                        "territory_name TEXT, world TEXT NOT NULL, x INTEGER NOT NULL, y INTEGER NOT NULL, z INTEGER NOT NULL, " +
                         "radius INTEGER NOT NULL, tier INTEGER NOT NULL, influence REAL NOT NULL, " +
                         "created_at INTEGER NOT NULL, UNIQUE(world, x, y, z))");
 
@@ -41,6 +42,11 @@ public class DatabaseManager {
                         "territory_id INTEGER NOT NULL, player_uuid TEXT NOT NULL, " +
                         "FOREIGN KEY(territory_id) REFERENCES territories(id) ON DELETE CASCADE, " +
                         "PRIMARY KEY(territory_id, player_uuid))");
+
+                stmt.execute("CREATE TABLE IF NOT EXISTS territory_effects (" +
+                        "territory_id INTEGER NOT NULL, effect_name TEXT NOT NULL, is_active INTEGER NOT NULL, " +
+                        "FOREIGN KEY(territory_id) REFERENCES territories(id) ON DELETE CASCADE, " +
+                        "PRIMARY KEY(territory_id, effect_name))");
 
                 stmt.execute("CREATE TABLE IF NOT EXISTS player_data (" +
                         "player_uuid TEXT PRIMARY KEY, last_seen INTEGER NOT NULL)");
@@ -69,6 +75,7 @@ public class DatabaseManager {
             while (rs.next()) {
                 UUID ownerUUID = UUID.fromString(rs.getString("owner_uuid"));
                 String ownerName = rs.getString("owner_name");
+                String territoryName = rs.getString("territory_name");
                 String worldName = rs.getString("world");
                 World world = Bukkit.getWorld(worldName);
                 if (world == null) {
@@ -82,8 +89,12 @@ public class DatabaseManager {
                 int id = rs.getInt("id");
 
                 Territory territory = new Territory(ownerUUID, ownerName, loc, radius, tier);
+                if (territoryName != null) {
+                    territory.setTerritoryName(territoryName);
+                }
                 territory.setInfluence(influence);
                 loadTrustedPlayers(territory, id);
+                loadTerritoryEffects(territory, id);
 
                 territoryManager.addTerritory(loc, territory);
                 territoryManager.createTerritoryBorder(loc, territory);
@@ -105,6 +116,23 @@ public class DatabaseManager {
         }
     }
 
+    private void loadTerritoryEffects(Territory territory, int territoryId) throws SQLException {
+        String sql = "SELECT effect_name, is_active FROM territory_effects WHERE territory_id = ?";
+        try (PreparedStatement stmt = database.prepareStatement(sql)) {
+            stmt.setInt(1, territoryId);
+            try (ResultSet rs = stmt.executeQuery()) {
+                while (rs.next()) {
+                    String effectName = rs.getString("effect_name");
+                    boolean isActive = rs.getInt("is_active") == 1;
+                    territory.unlockEffect(effectName);
+                    if (isActive) {
+                        territory.toggleEffect(effectName);
+                    }
+                }
+            }
+        }
+    }
+
     public void loadPlayerData(PlayerManager playerManager) {
         String sql = "SELECT * FROM player_data";
         try (Statement stmt = database.createStatement(); ResultSet rs = stmt.executeQuery(sql)) {
@@ -119,19 +147,20 @@ public class DatabaseManager {
     }
 
     public void saveTerritoryToDatabase(Territory territory) {
-        String sql = "INSERT INTO territories (owner_uuid, owner_name, world, x, y, z, radius, tier, influence, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+        String sql = "INSERT INTO territories (owner_uuid, owner_name, territory_name, world, x, y, z, radius, tier, influence, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
         try (PreparedStatement stmt = database.prepareStatement(sql)) {
             Location loc = territory.getBeaconLocation();
             stmt.setString(1, territory.getOwnerUUID().toString());
             stmt.setString(2, territory.getOwnerName());
-            stmt.setString(3, loc.getWorld().getName());
-            stmt.setInt(4, loc.getBlockX());
-            stmt.setInt(5, loc.getBlockY());
-            stmt.setInt(6, loc.getBlockZ());
-            stmt.setInt(7, territory.getRadius());
-            stmt.setInt(8, territory.getTier());
-            stmt.setDouble(9, territory.getInfluence());
-            stmt.setLong(10, System.currentTimeMillis());
+            stmt.setString(3, territory.getTerritoryName());
+            stmt.setString(4, loc.getWorld().getName());
+            stmt.setInt(5, loc.getBlockX());
+            stmt.setInt(6, loc.getBlockY());
+            stmt.setInt(7, loc.getBlockZ());
+            stmt.setInt(8, territory.getRadius());
+            stmt.setInt(9, territory.getTier());
+            stmt.setDouble(10, territory.getInfluence());
+            stmt.setLong(11, System.currentTimeMillis());
             stmt.executeUpdate();
         } catch (SQLException e) {
             plugin.getLogger().log(Level.SEVERE, "Error saving territory", e);
@@ -139,22 +168,24 @@ public class DatabaseManager {
     }
 
     public void updateTerritoryInDatabase(Territory territory) {
-        String sql = "UPDATE territories SET influence = ?, radius = ?, tier = ? WHERE owner_uuid = ? AND world = ? AND x = ? AND y = ? AND z = ?";
+        String sql = "UPDATE territories SET influence = ?, radius = ?, tier = ?, territory_name = ? WHERE owner_uuid = ? AND world = ? AND x = ? AND y = ? AND z = ?";
         try (PreparedStatement stmt = database.prepareStatement(sql)) {
             Location loc = territory.getBeaconLocation();
             stmt.setDouble(1, territory.getInfluence());
             stmt.setInt(2, territory.getRadius());
             stmt.setInt(3, territory.getTier());
-            stmt.setString(4, territory.getOwnerUUID().toString());
-            stmt.setString(5, loc.getWorld().getName());
-            stmt.setInt(6, loc.getBlockX());
-            stmt.setInt(7, loc.getBlockY());
-            stmt.setInt(8, loc.getBlockZ());
+            stmt.setString(4, territory.getTerritoryName());
+            stmt.setString(5, territory.getOwnerUUID().toString());
+            stmt.setString(6, loc.getWorld().getName());
+            stmt.setInt(7, loc.getBlockX());
+            stmt.setInt(8, loc.getBlockY());
+            stmt.setInt(9, loc.getBlockZ());
             stmt.executeUpdate();
 
             int territoryId = getTerritoryId(territory);
             if (territoryId != -1) {
                 updateTrustedPlayers(territory, territoryId);
+                updateTerritoryEffects(territory, territoryId);
             }
         } catch (SQLException e) {
             plugin.getLogger().log(Level.SEVERE, "Error updating territory", e);
@@ -191,6 +222,25 @@ public class DatabaseManager {
             for (UUID trustedUUID : territory.getTrustedPlayers()) {
                 stmt.setInt(1, territoryId);
                 stmt.setString(2, trustedUUID.toString());
+                stmt.addBatch();
+            }
+            stmt.executeBatch();
+        }
+    }
+
+    private void updateTerritoryEffects(Territory territory, int territoryId) throws SQLException {
+        String deleteSql = "DELETE FROM territory_effects WHERE territory_id = ?";
+        try (PreparedStatement stmt = database.prepareStatement(deleteSql)) {
+            stmt.setInt(1, territoryId);
+            stmt.executeUpdate();
+        }
+
+        String insertSql = "INSERT OR REPLACE INTO territory_effects (territory_id, effect_name, is_active) VALUES (?, ?, ?)";
+        try (PreparedStatement stmt = database.prepareStatement(insertSql)) {
+            for (String effect : territory.getUnlockedEffects()) {
+                stmt.setInt(1, territoryId);
+                stmt.setString(2, effect);
+                stmt.setInt(3, territory.hasEffect(effect) ? 1 : 0);
                 stmt.addBatch();
             }
             stmt.executeBatch();

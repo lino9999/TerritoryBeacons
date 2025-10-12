@@ -1,5 +1,6 @@
 package com.Lino.territoryBeacons.tasks;
 
+import com.Lino.territoryBeacons.Territory;
 import com.Lino.territoryBeacons.TerritoryBeacons;
 import com.Lino.territoryBeacons.managers.MessageManager;
 import org.bukkit.Bukkit;
@@ -8,27 +9,46 @@ import org.bukkit.Material;
 import org.bukkit.Sound;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.potion.PotionEffect;
+import org.bukkit.potion.PotionEffectType;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.scheduler.BukkitTask;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.HashMap;
 
 public class PluginTaskManager {
 
     private final TerritoryBeacons plugin;
     private final MessageManager messageManager;
     private final List<BukkitTask> tasks = new ArrayList<>();
+    private final Map<String, PotionEffectType> effectMap = new HashMap<>();
 
     public PluginTaskManager(TerritoryBeacons plugin) {
         this.plugin = plugin;
         this.messageManager = plugin.getMessageManager();
+        initializeEffectMap();
+    }
+
+    private void initializeEffectMap() {
+        effectMap.put("regeneration", PotionEffectType.REGENERATION);
+        effectMap.put("speed", PotionEffectType.SPEED);
+        effectMap.put("jump", PotionEffectType.JUMP_BOOST);
+        effectMap.put("haste", PotionEffectType.HASTE);
+        effectMap.put("fire_resistance", PotionEffectType.FIRE_RESISTANCE);
+        effectMap.put("strength", PotionEffectType.STRENGTH);
+        effectMap.put("resistance", PotionEffectType.RESISTANCE);
+        effectMap.put("luck", PotionEffectType.LUCK);
+        effectMap.put("night_vision", PotionEffectType.NIGHT_VISION);
+        effectMap.put("water_breathing", PotionEffectType.WATER_BREATHING);
     }
 
     public void startAllTasks() {
         tasks.add(startDecayTask());
         tasks.add(startSaveTask());
         tasks.add(startTerritoryCheckTask());
-        // NUOVO TASK PER AGGIORNARE LA MAPPA
+        tasks.add(startEffectsTask());
         if (plugin.getPl3xMapManager() != null) {
             tasks.add(startMapUpdateTask());
         }
@@ -47,7 +67,7 @@ public class PluginTaskManager {
                         territory -> plugin.getPl3xMapManager().addOrUpdateTerritoryMarker(territory)
                 );
             }
-        }.runTaskTimerAsynchronously(plugin, 20L * 60, 20L * 60 * 5); // Si avvia dopo 1 minuto, poi ogni 5 minuti
+        }.runTaskTimerAsynchronously(plugin, 20L * 60, 20L * 60 * 5);
     }
 
     private BukkitTask startDecayTask() {
@@ -106,5 +126,24 @@ public class PluginTaskManager {
                 }
             }
         }.runTaskTimer(plugin, 0, 20);
+    }
+
+    private BukkitTask startEffectsTask() {
+        return new BukkitRunnable() {
+            @Override
+            public void run() {
+                for (Player player : Bukkit.getOnlinePlayers()) {
+                    Territory territory = plugin.getTerritoryManager().getTerritoryAt(player.getLocation());
+                    if (territory != null && territory.canBuild(player)) { // Apply to owner and trusted
+                        for (String effectName : territory.getActiveEffects()) {
+                            PotionEffectType effectType = effectMap.get(effectName);
+                            if (effectType != null) {
+                                player.addPotionEffect(new PotionEffect(effectType, 100, 0, true, false));
+                            }
+                        }
+                    }
+                }
+            }
+        }.runTaskTimer(plugin, 0, 80);
     }
 }

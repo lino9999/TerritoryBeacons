@@ -48,7 +48,6 @@ public class TerritoryManager {
         territories.put(location, territory);
         plugin.getPlayerManager().updatePlayerTerritoryCount(territory.getOwnerUUID());
         if (plugin.getPl3xMapManager() != null) {
-            // CORREZIONE QUI
             plugin.getPl3xMapManager().addOrUpdateTerritoryMarker(territory);
         }
     }
@@ -137,7 +136,7 @@ public class TerritoryManager {
         createTerritoryBorder(loc, territory);
         spawnCreationEffect(loc);
 
-        owner.sendMessage(messageManager.get("territory-created"));
+        owner.sendMessage(messageManager.get("territory-created", "%radius%", String.valueOf(radius)));
         Bukkit.broadcastMessage(messageManager.get("broadcast-territory-created", "%owner%", owner.getName()));
         for (Player p : Bukkit.getOnlinePlayers()) {
             p.playSound(p.getLocation(), Sound.UI_TOAST_CHALLENGE_COMPLETE, 0.8f, 1.0f);
@@ -165,15 +164,16 @@ public class TerritoryManager {
         Location beaconLoc = territory.getBeaconLocation();
 
         Territory newTerritory = new Territory(territory.getOwnerUUID(), territory.getOwnerName(), beaconLoc, newRadius, targetTier);
+        newTerritory.setTerritoryName(territory.getTerritoryName());
         newTerritory.setInfluence(territory.getInfluence());
         territory.getTrustedPlayers().forEach(newTerritory::addTrustedPlayer);
+        territory.getActiveEffects().forEach(newTerritory::toggleEffect);
 
         removeTerritoryBorder(territory);
         territories.put(beaconLoc, newTerritory);
         createTerritoryBorder(beaconLoc, newTerritory);
 
         if (plugin.getPl3xMapManager() != null) {
-            // CORREZIONE QUI
             plugin.getPl3xMapManager().addOrUpdateTerritoryMarker(newTerritory);
         }
 

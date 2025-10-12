@@ -1,11 +1,8 @@
 # =======================================================
 # MESSAGES.YML FOR TERRITORYBEACONS
 #
-# Gradient format: <gradient:#RRGGBB:#RRGGBB>Message</gradient>
-# Normal color format: <#RRGGBB>Message
-#
 # Placeholders: %player%, %owner%, %radius%, %tier%,
-# %cost%, %max%, %distance%, %trusted_player%, %time%
+# %cost%, %max%, %distance%, %trusted_player%, %time%, %name%
 # =======================================================
 
 # General Messages
@@ -17,13 +14,17 @@ player-only-command: "<gradient:#FF5555:#AA0000>This command can only be used by
 player-not-found: "<gradient:#FF5555:#AA0000>Player not found.</gradient>"
 
 # Territory Actions
-territory-created: "<gradient:#66FF66:#18C818>Territory created successfully!</gradient>"
+territory-created: "<gradient:#66FF66:#18C818>Territory created successfully! Radius: %radius% blocks</gradient>"
 broadcast-territory-created: "<#FFAA00>%owner% has created a new territory!</#FFAA00>"
 territory-deleted: "<gradient:#66FF66:#18C818>Your territory has been successfully deleted!</gradient>"
 broadcast-territory-deleted: "<#FFAA00>%owner% has deleted their territory.</#FFAA00>"
 beacon-placed-reminder: "<gradient:#FFFF55:#FFAA00>Beacon placed! Right-click it to create the territory.</gradient>"
 territory-upgraded: "<gradient:#66FF66:#18C818>Territory upgraded to tier %tier%!</gradient>"
 new-radius-is: "<gradient:#00DDFF:#0096FF>New radius: %radius% blocks.</gradient>"
+territory-name-set: "<gradient:#66FF66:#18C818>Territory name set to: %name%</gradient>"
+effect-unlocked: "<gradient:#66FF66:#18C818>%effect% effect unlocked!</gradient>"
+effect-activated: "<gradient:#66FF66:#18C818>%effect% effect activated!</gradient>"
+effect-deactivated: "<gradient:#FF5555:#AA0000>%effect% effect deactivated!</gradient>"
 
 # Trust System
 you-cannot-trust-yourself: "<gradient:#FF5555:#AA0000>You cannot trust yourself.</gradient>"
@@ -49,35 +50,41 @@ target-has-no-territory: "<gradient:#FFFF55:#FFAA00>%player% does not own a terr
 no-trusted-players: "<gradient:#FFFF55:#FFAA00>You have not trusted any players.</gradient>"
 no-active-territories: "<gradient:#FFFF55:#FFAA00>There are no active territories on this server.</gradient>"
 need-more-diamonds: "<gradient:#FF5555:#AA0000>You need %cost% diamonds to upgrade.</gradient>"
+not-enough-money: "<gradient:#FF5555:#AA0000>You do not have enough money. Cost: %cost%</gradient>"
+not-enough-resources: "<gradient:#FF5555:#AA0000>You do not have enough resources to upgrade.</gradient>"
 beacon-action-failed: "<gradient:#FF5555:#AA0000>Could not find the beacon associated with this action.</gradient>"
 territory-decay-message: "<gradient:#FF5555:#AA0000>The territory of %owner% has decayed due to inactivity!</gradient>"
 
 # Player Movement Titles
 title-enter-own-territory: "<gradient:#66FF66:#18C818>Your Territory</gradient>"
-subtitle-enter-own-territory: "<#AAAAAA>You are safe here"
-title-enter-other-territory: "<gradient:#00DDFF:#0096FF>Territory of</gradient>"
-subtitle-enter-other-territory-trusted: "<#66FF66>%owner% (Trusted)"
-subtitle-enter-other-territory-untrusted: "<#FFFF55>%owner%"
+subtitle-enter-own-territory: "<#AAAAAA>%name%"
+title-enter-other-territory: "<gradient:#00DDFF:#0096FF>Territory</gradient>"
+subtitle-enter-other-territory-trusted: "<#66FF66>%name% (Trusted)"
+subtitle-enter-other-territory-untrusted: "<#FFFF55>%name%"
 title-wilderness: "<#AAAAAA>Wilderness"
 subtitle-wilderness: "<#777777>You have left the protected area"
 
 # Command Usage & Help
 usage-trust: "<#AAAAAA>Usage: /territory trust <player>"
 usage-untrust: "<#AAAAAA>Usage: /territory untrust <player>"
+usage-setname: "<#AAAAAA>Usage: /territory setname <name>"
 help-header: "<gradient:#00DDFF:#0096FF>TerritoryBeacons Commands</gradient>"
 help-info: "<#00DDFF>/t info <#777777>- Show territory info."
 help-trust: "<#00DDFF>/t trust <player> <#777777>- Add a player."
 help-untrust: "<#00DDFF>/t untrust <player> <#777777>- Remove a player."
 help-trusted: "<#00DDFF>/t trusted <#777777>- List trusted players."
 help-list: "<#00DDFF>/t list [player] <#777777>- List territories."
+help-setname: "<#00DDFF>/t setname <name> <#777777>- Set a name for your territory."
 help-reload: "<#00DDFF>/t reload <#777777>- Reload configuration."
 help-footer: "<#00DDFF>/t help <#777777>- Displays this help message."
+list-header: "<gradient:#00DDFF:#0096FF>Active Territories</gradient>"
 
 # GUI Titles
 gui-title-create: "<gradient:#00DDFF:#0096FF>Create Territory</gradient>"
 gui-title-management: "<gradient:#00DDFF:#0096FF>Territory Management</gradient>"
 gui-title-upgrade: "<gradient:#FFAA00:#FF5500>Upgrade Territory</gradient>"
 gui-title-delete-confirm: "<gradient:#FF5555:#AA0000>Confirm Deletion</gradient>"
+gui-title-effects: "<gradient:#00DDFF:#0096FF>Territory Effects</gradient>"
 
 # GUI Items & Lore
 gui-create-button: "<gradient:#66FF66:#18C818>Create Territory</gradient>"
@@ -88,6 +95,7 @@ gui-create-lore-4: "<#FFFF55>Territories Owned: <#FFFFFF>%count%/%max%"
 
 gui-info-button: "<gradient:#FFFF55:#FFAA00>Territory Information</gradient>"
 gui-info-lore-owner: "<#00DDFF>Owner: <#FFFFFF>%owner%"
+gui-info-lore-name: "<#00DDFF>Name: <#FFFFFF>%name%"
 gui-info-lore-radius: "<#00DDFF>Radius: <#FFFFFF>%radius% blocks"
 gui-info-lore-tier: "<#00DDFF>Tier: <#FFFFFF>%tier%"
 gui-info-lore-influence: "<#00DDFF>Influence: <#FFFFFF>%influence%%"
@@ -100,6 +108,8 @@ gui-upgrade-lore: "<#AAAAAA>Click to upgrade your territory."
 gui-delete-button: "<gradient:#FF5555:#AA0000>Delete Territory</gradient>"
 gui-delete-lore-1: "<#FF5555>WARNING: This is permanent!"
 gui-delete-lore-2: "<#AAAAAA>Click to destroy your territory."
+gui-effects-button: "<gradient:#00DDFF:#0096FF>Effects</gradient>"
+gui-effects-lore: "<#AAAAAA>Click to manage territory effects."
 
 gui-trusted-button: "<gradient:#66FF66:#18C818>Trusted Players</gradient>"
 gui-trusted-lore-count: "<#AAAAAA>Players: %count%"
@@ -108,7 +118,10 @@ gui-trusted-lore-command: "<#FFFF55>Use /territory trust <player>"
 gui-tier-owned: "<#66FF66>Tier %tier% (Owned)"
 gui-tier-available: "<#FFFF55>Tier %tier% (Available)"
 gui-tier-locked: "<#FF5555>Tier %tier% (Locked)"
-gui-tier-cost: "<#FFAA00>Cost: <#FFFFFF>%cost% diamonds"
+gui-tier-cost: "<#FFAA00>Cost:"
+gui-tier-cost-diamonds: "<#FFFFFF>%cost% diamonds"
+gui-tier-cost-money: "<#FFFFFF>%cost%"
+gui-tier-cost-both: "<#FFFFFF>%diamonds% diamonds and %money%"
 
 gui-delete-confirm-warning: "<#FF5555>⚠ WARNING ⚠"
 gui-delete-confirm-lore: "<#FF5555>This action CANNOT be undone!"
@@ -116,3 +129,32 @@ gui-delete-confirm-button: "<#AA0000>CONFIRM DELETION"
 gui-cancel-button: "<#66FF66>CANCEL"
 gui-back-button: "<#AAAAAA>Back"
 gui-close-button: "<#FF5555>Close"
+
+# Effects
+gui-effect-regeneration: "<gradient:#66FF66:#18C818>Regeneration</gradient>"
+gui-effect-regeneration-lore: "<#AAAAAA>Provides health regeneration."
+gui-effect-speed: "<gradient:#AACCFF:#88AAFF>Speed</gradient>"
+gui-effect-speed-lore: "<#AAAAAA>Increases movement speed."
+gui-effect-jump: "<gradient:#FFFF55:#FFAA00>Jump Boost</gradient>"
+gui-effect-jump-lore: "<#AAAAAA>Increases jump height."
+gui-effect-saturation: "<gradient:#FF5555:#AA0000>Saturation</gradient>"
+gui-effect-saturation-lore: "<#AAAAAA>Prevents hunger loss."
+gui-effect-haste: "<gradient:#FFFF55:#D4D400>Haste</gradient>"
+gui-effect-haste-lore: "<#AAAAAA>Increases mining speed."
+gui-effect-fire_resistance: "<gradient:#FFAA00:#FF5500>Fire Resistance</gradient>"
+gui-effect-fire_resistance-lore: "<#AAAAAA>Provides immunity to fire."
+gui-effect-strength: "<gradient:#FF5555:#FF0000>Strength</gradient>"
+gui-effect-strength-lore: "<#AAAAAA>Increases attack damage."
+gui-effect-resistance: "<gradient:#444444:#888888>Resistance</gradient>"
+gui-effect-resistance-lore: "<#AAAAAA>Reduces incoming damage."
+gui-effect-luck: "<gradient:#66FF66:#18C818>Luck</gradient>"
+gui-effect-luck-lore: "<#AAAAAA>Increases chances of rare loot."
+gui-effect-night_vision: "<gradient:#0000AA:#5555FF>Night Vision</gradient>"
+gui-effect-night_vision-lore: "<#AAAAAA>Provides permanent night vision."
+gui-effect-water_breathing: "<gradient:#00AAFF:#00FFFF>Water Breathing</gradient>"
+gui-effect-water_breathing-lore: "<#AAAAAA>Allows breathing underwater."
+
+gui-effect-status-active: "<#66FF66>Status: Active"
+gui-effect-status-inactive: "<#FF5555>Status: Inactive"
+gui-effect-status-locked: "<#FF5555>Status: Locked"
+gui-effect-unlock-cost: "<#FFAA00>Unlock Cost: <#FFFFFF>%cost%"

@@ -10,16 +10,20 @@ import java.util.Collections;
 public class Territory {
     private final UUID ownerUUID;
     private final String ownerName;
+    private String territoryName;
     private final Location beaconLocation;
     private final int radius;
     private final int tier;
     private double influence = 1.0;
     private final Set<UUID> trustedPlayers = Collections.synchronizedSet(new HashSet<>());
     private final Set<Location> borderBlocks = Collections.synchronizedSet(new HashSet<>());
+    private final Set<String> unlockedEffects = Collections.synchronizedSet(new HashSet<>());
+    private final Set<String> activeEffects = Collections.synchronizedSet(new HashSet<>());
 
     public Territory(UUID ownerUUID, String ownerName, Location beaconLocation, int radius, int tier) {
         this.ownerUUID = ownerUUID;
         this.ownerName = ownerName;
+        this.territoryName = ownerName + "'s Territory";
         this.beaconLocation = beaconLocation;
         this.radius = radius;
         this.tier = tier;
@@ -95,6 +99,14 @@ public class Territory {
         return ownerName;
     }
 
+    public String getTerritoryName() {
+        return territoryName;
+    }
+
+    public void setTerritoryName(String territoryName) {
+        this.territoryName = territoryName;
+    }
+
     public Location getBeaconLocation() {
         return beaconLocation.clone();
     }
@@ -113,6 +125,34 @@ public class Territory {
 
     public Set<UUID> getTrustedPlayers() {
         return new HashSet<>(trustedPlayers);
+    }
+
+    public Set<String> getUnlockedEffects() {
+        return new HashSet<>(unlockedEffects);
+    }
+
+    public Set<String> getActiveEffects() {
+        return new HashSet<>(activeEffects);
+    }
+
+    public void unlockEffect(String effect) {
+        unlockedEffects.add(effect);
+    }
+
+    public boolean isEffectUnlocked(String effect) {
+        return unlockedEffects.contains(effect);
+    }
+
+    public void toggleEffect(String effect) {
+        if (activeEffects.contains(effect)) {
+            activeEffects.remove(effect);
+        } else {
+            activeEffects.add(effect);
+        }
+    }
+
+    public boolean hasEffect(String effect) {
+        return activeEffects.contains(effect);
     }
 
     public void setInfluence(double influence) {

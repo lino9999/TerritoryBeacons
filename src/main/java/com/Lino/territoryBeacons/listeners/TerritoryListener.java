@@ -17,6 +17,7 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.event.entity.EntityExplodeEvent;
+import org.bukkit.event.entity.FoodLevelChangeEvent;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
@@ -147,6 +148,21 @@ public class TerritoryListener implements Listener {
     public void onEntityExplode(EntityExplodeEvent event) {
         if (!configManager.shouldPreventExplosions()) return;
         event.blockList().removeIf(b -> territoryManager.getTerritoryAt(b.getLocation()) != null);
+    }
+
+    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
+    public void onFoodLevelChange(FoodLevelChangeEvent event) {
+        if (!(event.getEntity() instanceof Player)) return;
+
+        Player player = (Player) event.getEntity();
+        Territory territory = territoryManager.getTerritoryAt(player.getLocation());
+        if (territory != null && territory.hasEffect("saturation")) {
+            if (territory.canBuild(player)) { // Apply to owner and trusted
+                event.setCancelled(true);
+                player.setFoodLevel(20);
+                player.setSaturation(10f);
+            }
+        }
     }
 
     @EventHandler

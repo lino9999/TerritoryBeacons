@@ -3,12 +3,6 @@
 # Inactivity time before the territory starts to decay (in hours)
 decay-time-hours: 160
 
-# Message when a territory is created
-territory-created-message: "&aTerritory created successfully! Radius: %radius% blocks"
-
-# Message when a territory decays
-territory-decay-message: "&cThe territory of %owner% has decayed due to inactivity!"
-
 # Territory upgrade tiers
 tiers:
   tier-1:
@@ -29,26 +23,49 @@ tiers:
   tier-6:
     radius: 100
     upgrade-cost: 256
+  tier-7:
+    radius: 120
+    upgrade-cost: 512
+  tier-8:
+    radius: 150
+    upgrade-cost: 1024
 
 # Advanced configuration
 advanced:
-  # Minimum distance between beacons (260 recommended)
   minimum-beacon-distance: 260
-
-  # Allow overlap of territories belonging to the same owner
   allow-same-owner-overlap: false
-
-  # Maximum number of territories per player
   max-territories-per-player: 1
-
-  # Also protect containers within territories
   protect-containers: true
-
-  # Prevent explosions within territories (TNT, Creeper, etc.)
   prevent-explosions: true
-
-  # Allow mob spawning within territories
   allow-mob-spawning: true
-
-  # Prevent fire spread within territories
   prevent-fire-spread: true
+
+# Economy settings
+economy:
+  cost-type: "BOTH"
+  upgrade-cost-multiplier: 100.0
+
+# Effects settings
+effects:
+  regeneration:
+    cost: 5000.0
+  speed:
+    cost: 3000.0
+  jump:
+    cost: 2500.0
+  saturation:
+    cost: 10000.0
+  haste:
+    cost: 4000.0
+  fire_resistance:
+    cost: 3500.0
+  strength:
+    cost: 15000.0
+  resistance:
+    cost: 15000.0
+  luck:
+    cost: 7500.0
+  night_vision:
+    cost: 2000.0
+  water_breathing:
+    cost: 4500.0

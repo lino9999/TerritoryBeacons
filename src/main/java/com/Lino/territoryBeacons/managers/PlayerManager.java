@@ -72,12 +72,12 @@ public class PlayerManager {
             String subtitle;
             if (currentTerritory.getOwnerUUID().equals(playerUUID)) {
                 title = messageManager.get("title-enter-own-territory");
-                subtitle = messageManager.get("subtitle-enter-own-territory");
+                subtitle = messageManager.get("subtitle-enter-own-territory", "%name%", currentTerritory.getTerritoryName());
             } else {
                 title = messageManager.get("title-enter-other-territory");
                 subtitle = currentTerritory.isTrusted(playerUUID)
-                        ? messageManager.get("subtitle-enter-other-territory-trusted", "%owner%", currentTerritory.getOwnerName())
-                        : messageManager.get("subtitle-enter-other-territory-untrusted", "%owner%", currentTerritory.getOwnerName());
+                        ? messageManager.get("subtitle-enter-other-territory-trusted", "%name%", currentTerritory.getTerritoryName())
+                        : messageManager.get("subtitle-enter-other-territory-untrusted", "%name%", currentTerritory.getTerritoryName());
             }
             player.sendTitle(title, subtitle, 10, 40, 10);
             player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BLOCK_CHIME, 0.5f, 1.0f);

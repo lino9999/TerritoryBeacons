@@ -12,6 +12,7 @@ import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.TabCompleter;
 import org.bukkit.entity.Player;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -73,9 +74,21 @@ public class TerritoryCommand implements CommandExecutor, TabCompleter {
             case "trusted":
                 showTrustedPlayers(player);
                 break;
+            case "setname":
+                if (!player.hasPermission("territory.setname")) {
+                    player.sendMessage(messageManager.get("no-permission"));
+                    return true;
+                }
+                if (args.length < 2) {
+                    player.sendMessage(messageManager.get("usage-setname"));
+                } else {
+                    setTerritoryName(player, String.join(" ", Arrays.copyOfRange(args, 1, args.length)));
+                }
+                break;
             case "reload":
                 if (player.hasPermission("territory.admin")) {
                     plugin.getConfigManager().loadConfigValues();
+                    plugin.getMessageManager().loadMessages();
                     player.sendMessage(messageManager.get("reload"));
                 } else {
                     player.sendMessage(messageManager.get("no-permission"));
@@ -98,6 +111,9 @@ public class TerritoryCommand implements CommandExecutor, TabCompleter {
         player.sendMessage(messageManager.get("help-untrust"));
         player.sendMessage(messageManager.get("help-trusted"));
         player.sendMessage(messageManager.get("help-list"));
+        if (player.hasPermission("territory.setname")) {
+            player.sendMessage(messageManager.get("help-setname"));
+        }
         if (player.hasPermission("territory.admin")) {
             player.sendMessage(messageManager.get("help-reload"));
         }
@@ -112,6 +128,7 @@ public class TerritoryCommand implements CommandExecutor, TabCompleter {
         }
         player.sendMessage(messageManager.get("gui-info-button"));
         player.sendMessage(messageManager.get("gui-info-lore-owner", "%owner%", territory.getOwnerName()));
+        player.sendMessage(messageManager.get("gui-info-lore-name", "%name%", territory.getTerritoryName()));
         player.sendMessage(messageManager.get("gui-info-lore-radius", "%radius%", String.valueOf(territory.getRadius())));
         player.sendMessage(messageManager.get("gui-info-lore-tier", "%tier%", String.valueOf(territory.getTier())));
         player.sendMessage(messageManager.get("gui-info-lore-influence", "%influence%", String.format("%.1f", territory.getInfluence() * 100)));
@@ -182,17 +199,30 @@ public class TerritoryCommand implements CommandExecutor, TabCompleter {
         }
     }
 
+    private void setTerritoryName(Player player, String name) {
+        Territory territory = territoryManager.getTerritoryByOwner(player.getUniqueId());
+        if (territory == null) {
+            player.sendMessage(messageManager.get("not-owner-of-territory"));
+            return;
+        }
+        territory.setTerritoryName(name);
+        if (plugin.getPl3xMapManager() != null) {
+            plugin.getPl3xMapManager().addOrUpdateTerritoryMarker(territory);
+        }
+        player.sendMessage(messageManager.get("territory-name-set", "%name%", name));
+    }
+
     private void listAllTerritories(Player player) {
         if (territoryManager.getAllTerritories().isEmpty()) {
             player.sendMessage(messageManager.get("no-active-territories"));
             return;
         }
-        player.sendMessage(messageManager.get("main", "Active Territories"));
+        player.sendMessage(messageManager.get("list-header"));
         for (Territory territory : territoryManager.getAllTerritories()) {
             Location loc = territory.getBeaconLocation();
             String coords = String.format("(%d, %d, %d)", loc.getBlockX(), loc.getBlockY(), loc.getBlockZ());
             String influence = String.format("%.0f%%", territory.getInfluence() * 100);
-            player.sendMessage(territory.getOwnerName() + " - " + coords + " - Influence: " + influence);
+            player.sendMessage(territory.getTerritoryName() + " - " + coords + " - Influence: " + influence);
         }
     }
 
@@ -209,7 +239,7 @@ public class TerritoryCommand implements CommandExecutor, TabCompleter {
         }
         Location loc = territory.getBeaconLocation();
         String coords = String.format("(%d, %d, %d)", loc.getBlockX(), loc.getBlockY(), loc.getBlockZ());
-        player.sendMessage(target.getName() + "'s Territory");
+        player.sendMessage(territory.getTerritoryName());
         player.sendMessage("Location: " + coords);
         player.sendMessage(messageManager.get("gui-info-lore-radius", "%radius%", String.valueOf(territory.getRadius())));
         player.sendMessage(messageManager.get("gui-info-lore-tier", "%tier%", String.valueOf(territory.getTier())));
@@ -222,6 +252,9 @@ public class TerritoryCommand implements CommandExecutor, TabCompleter {
             List<String> subcommands = new ArrayList<>(Arrays.asList("info", "trust", "untrust", "trusted", "list", "help"));
             if (sender.hasPermission("territory.admin")) {
                 subcommands.add("reload");
+            }
+            if (sender.hasPermission("territory.setname")) {
+                subcommands.add("setname");
             }
             return subcommands.stream()
                     .filter(s -> s.startsWith(args[0].toLowerCase()))
