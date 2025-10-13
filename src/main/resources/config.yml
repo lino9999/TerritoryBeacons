@@ -67,7 +67,7 @@ economy:
   # "DIAMONDS" - Players will pay only with diamonds.
   # "MONEY"    - Players will pay only with in-game money (requires Vault).
   # "BOTH"     - Players must pay with both diamonds and in-game money.
-  cost-type: "BOTH"
+  cost-type: "MONEY"
 
   # This multiplier is applied to the 'upgrade-cost' of a tier to determine the price in money.
   # Example: if upgrade-cost is 20 and multiplier is 100.0, the money cost will be 20 * 100.0 = 2000.

@@ -87,7 +87,7 @@ public class TerritoryGUI {
             gui.setItem(29, createNamedItem(Material.DIAMOND, messageManager.get("gui-upgrade-button"), messageManager.get("gui-upgrade-lore")));
             gui.setItem(30, createNamedItem(Material.PLAYER_HEAD, messageManager.get("gui-trusted-button"), messageManager.get("gui-trusted-lore-count", "%count%", String.valueOf(territory.getTrustedPlayers().size()))));
             gui.setItem(31, createNamedItem(Material.GOLDEN_APPLE, messageManager.get("gui-effects-button"), messageManager.get("gui-effects-lore")));
-            gui.setItem(32, createNamedItem(Material.COMMAND_BLOCK, messageManager.get("gui-settings-button"), messageManager.get("gui-settings-lore")));
+            gui.setItem(32, createNamedItem(Material.CLOCK, messageManager.get("gui-settings-button"), messageManager.get("gui-settings-lore")));
             gui.setItem(33, createNamedItem(Material.TNT, messageManager.get("gui-delete-button"), messageManager.get("gui-delete-lore-1"), messageManager.get("gui-delete-lore-2")));
         } else {
             List<String> trustedLore = new ArrayList<>();
@@ -130,7 +130,7 @@ public class TerritoryGUI {
                     lore.add(messageManager.get("gui-tier-cost-diamonds", "%cost%", String.valueOf(cost)));
                 } else if (costType.equals("MONEY")) {
                     lore.add(messageManager.get("gui-tier-cost-money", "%cost%", plugin.getEconomyManager().format(moneyCost)));
-                } else { // BOTH
+                } else {
                     lore.add(messageManager.get("gui-tier-cost-both", "%diamonds%", String.valueOf(cost), "%money%", plugin.getEconomyManager().format(moneyCost)));
                 }
                 item = createNamedItem(material, name, lore);
@@ -199,7 +199,6 @@ public class TerritoryGUI {
     public void openSettingsGUI(Player player, Territory territory) {
         Inventory gui = Bukkit.createInventory(null, 27, messageManager.get("gui-title-settings"));
 
-        // PVP Toggle
         List<String> pvpLore = new ArrayList<>();
         pvpLore.add(messageManager.get("gui-setting-pvp-lore"));
         pvpLore.add("");
@@ -210,7 +209,6 @@ public class TerritoryGUI {
         pvpItem.setItemMeta(pvpMeta);
         gui.setItem(11, pvpItem);
 
-        // Mob Spawning Toggle
         List<String> mobLore = new ArrayList<>();
         mobLore.add(messageManager.get("gui-setting-mob-spawning-lore"));
         mobLore.add("");
@@ -225,7 +223,6 @@ public class TerritoryGUI {
         fillEmpty(gui);
         player.openInventory(gui);
     }
-
 
     public void openDeleteConfirmationGUI(Player player, Territory territory) {
         Inventory gui = Bukkit.createInventory(null, 27, messageManager.get("gui-title-delete-confirm"));
@@ -282,7 +279,7 @@ public class TerritoryGUI {
             if (!isOwner) return;
             if (clickedItem.getType() == Material.DIAMOND) openUpgradeGUI(player, territory);
             else if (clickedItem.getType() == Material.GOLDEN_APPLE) openEffectsGUI(player, territory);
-            else if (clickedItem.getType() == Material.COMMAND_BLOCK) openSettingsGUI(player, territory);
+            else if (clickedItem.getType() == Material.CLOCK) openSettingsGUI(player, territory);
             else if (clickedItem.getType() == Material.TNT) openDeleteConfirmationGUI(player, territory);
             else if (clickedItem.getType() == Material.BARRIER) player.closeInventory();
         } else if (title.equals(messageManager.get("gui-title-upgrade"))) {
@@ -359,7 +356,7 @@ public class TerritoryGUI {
                 if (plugin.getEconomyManager().hasEnough(player, cost)) {
                     plugin.getEconomyManager().withdraw(player, cost);
                     territory.unlockEffect(effect);
-                    territory.toggleEffect(effect); // Activate on unlock
+                    territory.toggleEffect(effect);
                     player.sendMessage(messageManager.get("effect-unlocked", "%effect%", effect));
                     openEffectsGUI(player, territory);
                 } else {
