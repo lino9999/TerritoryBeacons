@@ -10,13 +10,17 @@ import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.block.Container;
+import org.bukkit.entity.EntityType;
+import org.bukkit.entity.Monster;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.block.BlockPlaceEvent;
+import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityExplodeEvent;
+import org.bukkit.event.entity.EntitySpawnEvent;
 import org.bukkit.event.entity.FoodLevelChangeEvent;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
@@ -141,6 +145,34 @@ public class TerritoryListener implements Listener {
                 player.sendMessage(messageManager.get("cannot-access-containers", "%owner%", territory.getOwnerName()));
                 event.setCancelled(true);
             }
+        }
+    }
+
+    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
+    public void onPlayerDamage(EntityDamageByEntityEvent event) {
+        if (!(event.getEntity() instanceof Player) || !(event.getDamager() instanceof Player)) {
+            return;
+        }
+
+        Player victim = (Player) event.getEntity();
+        Territory territory = territoryManager.getTerritoryAt(victim.getLocation());
+
+        if (territory != null && !territory.isPvpEnabled()) {
+            event.setCancelled(true);
+            Player attacker = (Player) event.getDamager();
+            attacker.sendMessage(messageManager.get("pvp-disabled"));
+        }
+    }
+
+    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
+    public void onMobSpawn(EntitySpawnEvent event) {
+        if (!(event.getEntity() instanceof Monster)) {
+            return;
+        }
+
+        Territory territory = territoryManager.getTerritoryAt(event.getLocation());
+        if (territory != null && !territory.isMobSpawningEnabled()) {
+            event.setCancelled(true);
         }
     }
 

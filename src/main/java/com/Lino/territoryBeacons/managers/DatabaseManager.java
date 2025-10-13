@@ -36,6 +36,7 @@ public class DatabaseManager {
                         "id INTEGER PRIMARY KEY AUTOINCREMENT, owner_uuid TEXT NOT NULL, owner_name TEXT NOT NULL, " +
                         "territory_name TEXT, world TEXT NOT NULL, x INTEGER NOT NULL, y INTEGER NOT NULL, z INTEGER NOT NULL, " +
                         "radius INTEGER NOT NULL, tier INTEGER NOT NULL, influence REAL NOT NULL, " +
+                        "pvp_enabled INTEGER DEFAULT 1, mob_spawning_enabled INTEGER DEFAULT 1, " +
                         "created_at INTEGER NOT NULL, UNIQUE(world, x, y, z))");
 
                 stmt.execute("CREATE TABLE IF NOT EXISTS trusted_players (" +
@@ -93,6 +94,9 @@ public class DatabaseManager {
                     territory.setTerritoryName(territoryName);
                 }
                 territory.setInfluence(influence);
+                territory.setPvpEnabled(rs.getBoolean("pvp_enabled"));
+                territory.setMobSpawningEnabled(rs.getBoolean("mob_spawning_enabled"));
+
                 loadTrustedPlayers(territory, id);
                 loadTerritoryEffects(territory, id);
 
@@ -147,7 +151,7 @@ public class DatabaseManager {
     }
 
     public void saveTerritoryToDatabase(Territory territory) {
-        String sql = "INSERT INTO territories (owner_uuid, owner_name, territory_name, world, x, y, z, radius, tier, influence, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+        String sql = "INSERT INTO territories (owner_uuid, owner_name, territory_name, world, x, y, z, radius, tier, influence, pvp_enabled, mob_spawning_enabled, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
         try (PreparedStatement stmt = database.prepareStatement(sql)) {
             Location loc = territory.getBeaconLocation();
             stmt.setString(1, territory.getOwnerUUID().toString());
@@ -160,7 +164,9 @@ public class DatabaseManager {
             stmt.setInt(8, territory.getRadius());
             stmt.setInt(9, territory.getTier());
             stmt.setDouble(10, territory.getInfluence());
-            stmt.setLong(11, System.currentTimeMillis());
+            stmt.setBoolean(11, territory.isPvpEnabled());
+            stmt.setBoolean(12, territory.isMobSpawningEnabled());
+            stmt.setLong(13, System.currentTimeMillis());
             stmt.executeUpdate();
         } catch (SQLException e) {
             plugin.getLogger().log(Level.SEVERE, "Error saving territory", e);
@@ -168,18 +174,20 @@ public class DatabaseManager {
     }
 
     public void updateTerritoryInDatabase(Territory territory) {
-        String sql = "UPDATE territories SET influence = ?, radius = ?, tier = ?, territory_name = ? WHERE owner_uuid = ? AND world = ? AND x = ? AND y = ? AND z = ?";
+        String sql = "UPDATE territories SET influence = ?, radius = ?, tier = ?, territory_name = ?, pvp_enabled = ?, mob_spawning_enabled = ? WHERE owner_uuid = ? AND world = ? AND x = ? AND y = ? AND z = ?";
         try (PreparedStatement stmt = database.prepareStatement(sql)) {
             Location loc = territory.getBeaconLocation();
             stmt.setDouble(1, territory.getInfluence());
             stmt.setInt(2, territory.getRadius());
             stmt.setInt(3, territory.getTier());
             stmt.setString(4, territory.getTerritoryName());
-            stmt.setString(5, territory.getOwnerUUID().toString());
-            stmt.setString(6, loc.getWorld().getName());
-            stmt.setInt(7, loc.getBlockX());
-            stmt.setInt(8, loc.getBlockY());
-            stmt.setInt(9, loc.getBlockZ());
+            stmt.setBoolean(5, territory.isPvpEnabled());
+            stmt.setBoolean(6, territory.isMobSpawningEnabled());
+            stmt.setString(7, territory.getOwnerUUID().toString());
+            stmt.setString(8, loc.getWorld().getName());
+            stmt.setInt(9, loc.getBlockX());
+            stmt.setInt(10, loc.getBlockY());
+            stmt.setInt(11, loc.getBlockZ());
             stmt.executeUpdate();
 
             int territoryId = getTerritoryId(territory);

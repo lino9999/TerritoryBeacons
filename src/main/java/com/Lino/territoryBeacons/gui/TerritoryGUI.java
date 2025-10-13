@@ -26,12 +26,14 @@ public class TerritoryGUI {
     private final MessageManager messageManager;
     private final NamespacedKey tierKey;
     private final NamespacedKey effectKey;
+    private final NamespacedKey settingKey;
 
     public TerritoryGUI(TerritoryBeacons plugin) {
         this.plugin = plugin;
         this.messageManager = plugin.getMessageManager();
         this.tierKey = new NamespacedKey(plugin, "tier");
         this.effectKey = new NamespacedKey(plugin, "effect");
+        this.settingKey = new NamespacedKey(plugin, "setting");
     }
 
     public void openCreationGUI(Player player, Location beaconLocation) {
@@ -82,17 +84,17 @@ public class TerritoryGUI {
 
         boolean isOwner = territory.getOwnerUUID().equals(player.getUniqueId());
         if (isOwner) {
-            gui.setItem(38, createNamedItem(Material.DIAMOND, messageManager.get("gui-upgrade-button"), messageManager.get("gui-upgrade-lore")));
-            gui.setItem(40, createNamedItem(Material.GOLDEN_APPLE, messageManager.get("gui-effects-button"), messageManager.get("gui-effects-lore")));
-            gui.setItem(42, createNamedItem(Material.TNT, messageManager.get("gui-delete-button"), messageManager.get("gui-delete-lore-1"), messageManager.get("gui-delete-lore-2")));
+            gui.setItem(29, createNamedItem(Material.DIAMOND, messageManager.get("gui-upgrade-button"), messageManager.get("gui-upgrade-lore")));
+            gui.setItem(30, createNamedItem(Material.PLAYER_HEAD, messageManager.get("gui-trusted-button"), messageManager.get("gui-trusted-lore-count", "%count%", String.valueOf(territory.getTrustedPlayers().size()))));
+            gui.setItem(31, createNamedItem(Material.GOLDEN_APPLE, messageManager.get("gui-effects-button"), messageManager.get("gui-effects-lore")));
+            gui.setItem(32, createNamedItem(Material.COMMAND_BLOCK, messageManager.get("gui-settings-button"), messageManager.get("gui-settings-lore")));
+            gui.setItem(33, createNamedItem(Material.TNT, messageManager.get("gui-delete-button"), messageManager.get("gui-delete-lore-1"), messageManager.get("gui-delete-lore-2")));
+        } else {
+            List<String> trustedLore = new ArrayList<>();
+            trustedLore.add(messageManager.get("gui-trusted-lore-count", "%count%", String.valueOf(territory.getTrustedPlayers().size())));
+            gui.setItem(31, createNamedItem(Material.PLAYER_HEAD, messageManager.get("gui-trusted-button"), trustedLore));
         }
 
-        List<String> trustedLore = new ArrayList<>();
-        trustedLore.add(messageManager.get("gui-trusted-lore-count", "%count%", String.valueOf(territory.getTrustedPlayers().size())));
-        if (isOwner) {
-            trustedLore.add(messageManager.get("gui-trusted-lore-command"));
-        }
-        gui.setItem(isOwner ? 39 : 40, createNamedItem(Material.PLAYER_HEAD, messageManager.get("gui-trusted-button"), trustedLore));
         addCloseButton(gui, 49);
         fillEmpty(gui);
         player.openInventory(gui);
@@ -194,6 +196,37 @@ public class TerritoryGUI {
         player.openInventory(gui);
     }
 
+    public void openSettingsGUI(Player player, Territory territory) {
+        Inventory gui = Bukkit.createInventory(null, 27, messageManager.get("gui-title-settings"));
+
+        // PVP Toggle
+        List<String> pvpLore = new ArrayList<>();
+        pvpLore.add(messageManager.get("gui-setting-pvp-lore"));
+        pvpLore.add("");
+        pvpLore.add(messageManager.get(territory.isPvpEnabled() ? "gui-setting-status-enabled" : "gui-setting-status-disabled"));
+        ItemStack pvpItem = createNamedItem(territory.isPvpEnabled() ? Material.DIAMOND_SWORD : Material.WOODEN_SWORD, messageManager.get("gui-setting-pvp"), pvpLore);
+        ItemMeta pvpMeta = pvpItem.getItemMeta();
+        pvpMeta.getPersistentDataContainer().set(settingKey, PersistentDataType.STRING, "pvp");
+        pvpItem.setItemMeta(pvpMeta);
+        gui.setItem(11, pvpItem);
+
+        // Mob Spawning Toggle
+        List<String> mobLore = new ArrayList<>();
+        mobLore.add(messageManager.get("gui-setting-mob-spawning-lore"));
+        mobLore.add("");
+        mobLore.add(messageManager.get(territory.isMobSpawningEnabled() ? "gui-setting-status-enabled" : "gui-setting-status-disabled"));
+        ItemStack mobItem = createNamedItem(territory.isMobSpawningEnabled() ? Material.ZOMBIE_HEAD : Material.SKELETON_SKULL, messageManager.get("gui-setting-mob-spawning"), mobLore);
+        ItemMeta mobMeta = mobItem.getItemMeta();
+        mobMeta.getPersistentDataContainer().set(settingKey, PersistentDataType.STRING, "mob_spawning");
+        mobItem.setItemMeta(mobMeta);
+        gui.setItem(15, mobItem);
+
+        gui.setItem(22, createNamedItem(Material.ARROW, messageManager.get("gui-back-button")));
+        fillEmpty(gui);
+        player.openInventory(gui);
+    }
+
+
     public void openDeleteConfirmationGUI(Player player, Territory territory) {
         Inventory gui = Bukkit.createInventory(null, 27, messageManager.get("gui-title-delete-confirm"));
         gui.setItem(4, createNamedItem(Material.BARRIER, messageManager.get("gui-delete-confirm-warning"),
@@ -215,7 +248,8 @@ public class TerritoryGUI {
                 !title.equals(messageManager.get("gui-title-management")) &&
                 !title.equals(messageManager.get("gui-title-upgrade")) &&
                 !title.equals(messageManager.get("gui-title-delete-confirm")) &&
-                !title.equals(messageManager.get("gui-title-effects"))) {
+                !title.equals(messageManager.get("gui-title-effects")) &&
+                !title.equals(messageManager.get("gui-title-settings"))) {
             return;
         }
 
@@ -248,6 +282,7 @@ public class TerritoryGUI {
             if (!isOwner) return;
             if (clickedItem.getType() == Material.DIAMOND) openUpgradeGUI(player, territory);
             else if (clickedItem.getType() == Material.GOLDEN_APPLE) openEffectsGUI(player, territory);
+            else if (clickedItem.getType() == Material.COMMAND_BLOCK) openSettingsGUI(player, territory);
             else if (clickedItem.getType() == Material.TNT) openDeleteConfirmationGUI(player, territory);
             else if (clickedItem.getType() == Material.BARRIER) player.closeInventory();
         } else if (title.equals(messageManager.get("gui-title-upgrade"))) {
@@ -332,6 +367,30 @@ public class TerritoryGUI {
                     player.closeInventory();
                 }
             }
+        } else if (title.equals(messageManager.get("gui-title-settings"))) {
+            if (!isOwner) return;
+
+            if (clickedItem.getType() == Material.ARROW) {
+                openTerritoryInfoGUI(player, territory);
+                return;
+            }
+
+            ItemMeta meta = clickedItem.getItemMeta();
+            if (meta == null || !meta.getPersistentDataContainer().has(settingKey, PersistentDataType.STRING)) {
+                return;
+            }
+            String setting = meta.getPersistentDataContainer().get(settingKey, PersistentDataType.STRING);
+
+            if (setting.equals("pvp")) {
+                territory.setPvpEnabled(!territory.isPvpEnabled());
+                player.sendMessage(messageManager.get("setting-changed", "%setting%", "PVP", "%status%", territory.isPvpEnabled() ? "enabled" : "disabled"));
+                openSettingsGUI(player, territory);
+            } else if (setting.equals("mob_spawning")) {
+                territory.setMobSpawningEnabled(!territory.isMobSpawningEnabled());
+                player.sendMessage(messageManager.get("setting-changed", "%setting%", "Mob Spawning", "%status%", territory.isMobSpawningEnabled() ? "enabled" : "disabled"));
+                openSettingsGUI(player, territory);
+            }
+
         } else if (title.equals(messageManager.get("gui-title-delete-confirm"))) {
             if (!isOwner) return;
             if (clickedItem.getType() == Material.RED_WOOL) {
@@ -374,7 +433,6 @@ public class TerritoryGUI {
         int radius = 15;
         Location playerLoc = player.getLocation();
 
-        // Check for existing territories first
         for (Territory territory : plugin.getTerritoryManager().getAllTerritories()) {
             Location beaconLoc = territory.getBeaconLocation();
             if (beaconLoc.getWorld().equals(player.getWorld()) && beaconLoc.distanceSquared(playerLoc) < radius * radius) {
@@ -382,7 +440,6 @@ public class TerritoryGUI {
             }
         }
 
-        // Fallback for newly placed beacons not yet in a territory
         for (int x = -radius; x <= radius; x++) {
             for (int y = -radius; y <= radius; y++) {
                 for (int z = -radius; z <= radius; z++) {

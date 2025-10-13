@@ -1,8 +1,5 @@
 # =======================================================
 # MESSAGES.YML FOR TERRITORYBEACONS
-#
-# Placeholders: %player%, %owner%, %radius%, %tier%,
-# %cost%, %max%, %distance%, %trusted_player%, %time%, %name%
 # =======================================================
 
 # General Messages
@@ -25,6 +22,7 @@ territory-name-set: "<gradient:#66FF66:#18C818>Territory name set to: %name%</gr
 effect-unlocked: "<gradient:#66FF66:#18C818>%effect% effect unlocked!</gradient>"
 effect-activated: "<gradient:#66FF66:#18C818>%effect% effect activated!</gradient>"
 effect-deactivated: "<gradient:#FF5555:#AA0000>%effect% effect deactivated!</gradient>"
+setting-changed: "<gradient:#66FF66:#18C818>%setting% has been %status%!</gradient>"
 
 # Trust System
 you-cannot-trust-yourself: "<gradient:#FF5555:#AA0000>You cannot trust yourself.</gradient>"
@@ -54,6 +52,7 @@ not-enough-money: "<gradient:#FF5555:#AA0000>You do not have enough money. Cost:
 not-enough-resources: "<gradient:#FF5555:#AA0000>You do not have enough resources to upgrade.</gradient>"
 beacon-action-failed: "<gradient:#FF5555:#AA0000>Could not find the beacon associated with this action.</gradient>"
 territory-decay-message: "<gradient:#FF5555:#AA0000>The territory of %owner% has decayed due to inactivity!</gradient>"
+pvp-disabled: "<gradient:#FF5555:#AA0000>PVP is disabled in this territory.</gradient>"
 
 # Player Movement Titles
 title-enter-own-territory: "<gradient:#66FF66:#18C818>Your Territory</gradient>"
@@ -85,6 +84,7 @@ gui-title-management: "<gradient:#00DDFF:#0096FF>Territory Management</gradient>
 gui-title-upgrade: "<gradient:#FFAA00:#FF5500>Upgrade Territory</gradient>"
 gui-title-delete-confirm: "<gradient:#FF5555:#AA0000>Confirm Deletion</gradient>"
 gui-title-effects: "<gradient:#00DDFF:#0096FF>Territory Effects</gradient>"
+gui-title-settings: "<gradient:#00DDFF:#0096FF>Territory Settings</gradient>"
 
 # GUI Items & Lore
 gui-create-button: "<gradient:#66FF66:#18C818>Create Territory</gradient>"
@@ -110,6 +110,8 @@ gui-delete-lore-1: "<#FF5555>WARNING: This is permanent!"
 gui-delete-lore-2: "<#AAAAAA>Click to destroy your territory."
 gui-effects-button: "<gradient:#00DDFF:#0096FF>Effects</gradient>"
 gui-effects-lore: "<#AAAAAA>Click to manage territory effects."
+gui-settings-button: "<gradient:#AAAAAA:#DDDDDD>Settings</gradient>"
+gui-settings-lore: "<#AAAAAA>Click to manage territory settings."
 
 gui-trusted-button: "<gradient:#66FF66:#18C818>Trusted Players</gradient>"
 gui-trusted-lore-count: "<#AAAAAA>Players: %count%"
@@ -158,3 +160,11 @@ gui-effect-status-active: "<#66FF66>Status: Active"
 gui-effect-status-inactive: "<#FF5555>Status: Inactive"
 gui-effect-status-locked: "<#FF5555>Status: Locked"
 gui-effect-unlock-cost: "<#FFAA00>Unlock Cost: <#FFFFFF>%cost%"
+
+# Settings
+gui-setting-pvp: "<gradient:#FF5555:#AA0000>PVP</gradient>"
+gui-setting-pvp-lore: "<#AAAAAA>Toggle player vs player combat."
+gui-setting-mob-spawning: "<gradient:#444444:#888888>Mob Spawning</gradient>"
+gui-setting-mob-spawning-lore: "<#AAAAAA>Toggle hostile mob spawning."
+gui-setting-status-enabled: "<#66FF66>Status: Enabled"
+gui-setting-status-disabled: "<#FF5555>Status: Disabled"

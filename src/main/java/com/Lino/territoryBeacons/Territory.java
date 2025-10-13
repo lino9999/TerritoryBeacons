@@ -15,6 +15,8 @@ public class Territory {
     private final int radius;
     private final int tier;
     private double influence = 1.0;
+    private boolean pvpEnabled = true;
+    private boolean mobSpawningEnabled = true;
     private final Set<UUID> trustedPlayers = Collections.synchronizedSet(new HashSet<>());
     private final Set<Location> borderBlocks = Collections.synchronizedSet(new HashSet<>());
     private final Set<String> unlockedEffects = Collections.synchronizedSet(new HashSet<>());
@@ -121,6 +123,22 @@ public class Territory {
 
     public double getInfluence() {
         return influence;
+    }
+
+    public boolean isPvpEnabled() {
+        return pvpEnabled;
+    }
+
+    public void setPvpEnabled(boolean pvpEnabled) {
+        this.pvpEnabled = pvpEnabled;
+    }
+
+    public boolean isMobSpawningEnabled() {
+        return mobSpawningEnabled;
+    }
+
+    public void setMobSpawningEnabled(boolean mobSpawningEnabled) {
+        this.mobSpawningEnabled = mobSpawningEnabled;
     }
 
     public Set<UUID> getTrustedPlayers() {
