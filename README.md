@@ -1,52 +1,48 @@
-TerritoryBeacons Plugin - Feature Overview
-Brief Description
-TerritoryBeacons is a Minecraft server plugin that allows players to create protected territories using activated beacon blocks. The plugin provides land claiming, protection, and management systems with visual boundaries and automatic decay mechanisms.
-Core Features
-Territory Creation & Management
+# 🏰 TerritoryBeacons - Immersive Land Claiming (1.21+)
 
-Beacon-Based Claims: Players create territories by placing and activating beacon blocks with pyramid structures
-Configurable Radius: Territory size scales with beacon tier level (configurable base radius + tier multiplier)
-Overlap Prevention: System prevents territories from overlapping with existing claims
-Visual Boundaries: Automatic placement of torch markers around territory perimeters
+> **Forget command-based claiming. Protect your land using powered Beacons!**
+> TerritoryBeacons adds an RPG-style protection system where players place beacons to establish, upgrade, and maintain their territories.
+> **Includes Pl3xMap support and an Influence Decay system.**
 
-Protection System
+![Java](https://img.shields.io/badge/Java-17-orange) ![Spigot](https://img.shields.io/badge/API-1.21-yellow) ![License](https://img.shields.io/badge/License-MIT-blue)
 
-Build Protection: Prevents unauthorized block placement and destruction within claimed territories
-Explosion Protection: Blocks TNT and other explosions from damaging territory blocks
-Border Protection: Territory boundary markers cannot be broken by non-owners
-Owner Privileges: Territory owners have full building rights within their claims
+---
 
-Territory Information & Interaction
+## 💎 Why TerritoryBeacons?
+Most protection plugins break immersion. **TerritoryBeacons** integrates seamlessly into survival gameplay. Players must craft and place Beacons to claim land, use **Diamonds/Money** to upgrade their radius, and log in regularly to maintain "Influence" preventing decay.
 
-Interactive Beacons: Right-clicking territory beacons displays detailed information (owner, radius, level, influence)
-Entry/Exit Notifications: Players receive title messages and sound alerts when entering or leaving territories
-Territory Status: Real-time tracking of player locations within territories
+### ✨ Key Features
 
-Influence & Decay System
+* **📍 Beacon-Based Claims**
+    * Place a Beacon block to instantly claim the surrounding area.
+    * **Visual Borders:** Automatically places temporary torches to show boundaries.
+    * **Upgradable Tiers:** Upgrade your territory from Tier 1 (16 blocks) to Tier 8 (150 blocks) using GUI.
 
-Territory Influence: Each territory has an influence value that decreases when owners are offline
-Automatic Decay: Territories gradually lose influence and eventually disappear if owners remain inactive
-Configurable Decay Time: Server administrators can set custom offline time limits (default: 72 hours)
-Influence Recovery: Territory influence slowly regenerates when owners are online
+* **📉 Influence & Decay System**
+    * Territories require active owners. If a player is offline for too long (configurable), the territory loses **Influence**.
+    * At 0% influence, the protection is removed, keeping your map clean of abandoned claims.
 
-Administrative Features
+* **🗺️ Pl3xMap Integration**
+    * Automatically draws territory borders on your web map.
+    * Shows owner name, tier, and influence status directly on the map.
 
-Persistent Storage: Territory data is automatically saved to YAML configuration files
-Auto-Save System: Regular automatic saving every 5 minutes to prevent data loss
-Configuration Options: Customizable base radius, tier multipliers, and decay timing
-Command System: Built-in territory management commands (references TerritoryCommand class)
+* **🛡️ Full Management GUI**
+    * Manage **Trusted Players**, toggle **PvP/Mob Spawning**, and buy **Beacon Effects** (Speed, Haste, Regen) directly from a menu.
 
-Visual & Audio Effects
+---
 
-Creation Effects: Particle effects when territories are successfully established
-Boundary Visualization: Torch placement at territory borders for clear visual demarcation
-Sound Notifications: Audio cues for territory entry/exit events
-Title Messages: Clear on-screen notifications for territory status changes
+## ⚙️ Configuration
+Customize costs, tiers, and decay timers in `config.yml`.
 
-Technical Specifications
+```yaml
+# Example: Territory Tiers
+tiers:
+  tier-1:
+    radius: 16
+    upgrade-cost: 0
+  tier-2:
+    radius: 32
+    upgrade-cost: 20 # 20 Diamonds/Money to upgrade
 
-Multi-World Support: Works across multiple Minecraft worlds
-Concurrent Processing: Thread-safe territory management using ConcurrentHashMap
-Performance Optimized: Efficient player position checking and territory validation
-Event-Driven: Responsive to block placement, destruction, and player interactions
-Configurable Parameters: Extensive customization options through plugin configuration files
+# Decay Settings
+decay-time-hours: 160 # Start decaying after ~7 days offline
